@@ -171,7 +171,6 @@ class Music(discord.Client):
                 elif response_type == 'event_queue_change':
                     pass
                 else:
-                    print(res)
                     print('error: unexpected response type')
 
 
@@ -512,9 +511,9 @@ class Music(discord.Client):
         if self.player_status.get('source') == 'gpm':
             res_text += (f'        album: **{self.player_status.get("album")}**\n'
                         f'        artist: **{self.player_status.get("artist")}**\n'
-                        '        - from: gpm')
+                        '        from: **gpm**')
         else:
-            res_text += f'        - from: {self.player_status.get("source")}'
+            res_text += f'        from: **{self.player_status.get("source")}**'
         await self.safe_send(dest, res_text)
 
 
