@@ -10,6 +10,26 @@ class Config:
             print('fatal error: config file does not exist')
             exit(1)
 
+        self.parse_general_config(conf)
+
+        try:
+            with open(alias_file, 'r') as f:
+                self.alias = json.load(f)
+        except FileNotFoundError:
+            print('alias file does not exist')
+            self.alias = {}
+
+        black = None
+        try:
+            with open(blacklist, 'r') as f:
+                black = json.load(f)
+        except FileNotFoundError:
+            print('blacklist file does not exist')
+            black = {}
+
+        self.parse_blacklist(black)
+    
+    def parse_general_config(self, conf):
         self.token = conf.get('token')
         self.stream_endpoint = conf.get('stream_endpoint')
         self.cmd_endpoint = conf.get('cmd_endpoint')
@@ -30,16 +50,9 @@ class Config:
         if not 1 <= self.serch_result_count <=9 or None:
             self.serch_result_count = 5
 
-        try:
-            with open(alias_file, 'r') as f:
-                self.alias = json.load(f)
-        except FileNotFoundError:
-            print('alias file does not exist')
-            self.alias = {}
-
-        try:
-            with open(blacklist, 'r') as f:
-                self.blacklist = json.load(f)
-        except FileNotFoundError:
-            print('blacklist file does not exist')
+    def parse_blacklist(self, blacklist):
+        if blacklist is None:
             self.blacklist = {}
+            return
+        users = [int(i) for i in blacklist.get('user_id')]
+        self.blacklist = users
