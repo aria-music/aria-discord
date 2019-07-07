@@ -358,9 +358,13 @@ class Music(discord.Client):
         numberd_list = ''
         if opr == 'queue':
             if self.player_status.get('state') == 'playing':
-                numberd_list = f':arrow_forward: **{self.player_status.get("title")}**\n\n'
+                numberd_list = f':arrow_forward: **{self.player_status.get("title")}**\n'
             else:
-                numberd_list = f':pause_button: **{self.player_status.get("title")}**\n\n'
+                numberd_list = f':pause_button: **{self.player_status.get("title")}**\n'
+            if self.player_status.get('source') == 'gpm':
+                numberd_list += f'        {self.player_status.get("album")} / {self.player_status.get("artist")}\n\n'
+            else:
+                numberd_list += '\n\n'
         for num, song in zip(self.nums, orig_list):
             if song[0] == 'gpm':
                 numberd_list += (f'{num} {song[1]}\n'
