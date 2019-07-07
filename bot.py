@@ -365,6 +365,7 @@ class Music(discord.Client):
                 numberd_list += f'        {self.player_status.get("album")} / {self.player_status.get("artist")}\n\n'
             else:
                 numberd_list += '\n\n'
+            numberd_list += f'**{len(orig_list)}** tracks in queue\n\n'
         for num, song in zip(self.nums, orig_list):
             if song[0] == 'gpm':
                 numberd_list += (f'{num} {song[1]}\n'
