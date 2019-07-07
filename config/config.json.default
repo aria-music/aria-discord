@@ -1,0 +1,9 @@
+{
+    "token":"YOUR BOT TOKEN",
+    "stream_endpoint": "ws://example.com/stream",
+    "cmd_endpoint": "ws://example.com/player",
+    "voice_channel_id": "ID",
+    "text_channel_id": "ID",
+    "command_prefix": ".",
+    "serch_result_count": "5"
+}

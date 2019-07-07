@@ -1,0 +1,6 @@
+config/config.json
+config/alias.json
+config/blacklist.json
+.python-version
+__pycache__
+*.pyc
