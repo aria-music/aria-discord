@@ -3,6 +3,7 @@ import json
 import re
 import textwrap
 import threading
+import logging
 
 import discord
 
@@ -72,15 +73,16 @@ class Music(discord.Client):
         }
 
     async def on_ready(self):
-        print('connected to discord')
+        logging.info('connected to discord')
         #await asyncio.wait_for(self.join_vc(), timeout=5.0)
         await self.join_vc()
         await self.post('discord ready')
+        logging.info('discord vc connect')
         player = threading.Thread(target=play, args=(self.player_queue, self.voice, self.loop), daemon=True)
         response_handler = threading.Thread(target=self.handle_res, daemon=True)
         player.start()
         response_handler.start()
-        print('connected to vc')
+        logging.info('connected to vc')
 
     async def safe_send(self, dest, payload, user=None):
         '''
@@ -100,13 +102,13 @@ class Music(discord.Client):
             else:
                 msg = await dest.send(payload)
         except discord.Forbidden:
-            print('You do not have the proper permissions to send the message.')
+            logging.error('You do not have the proper permissions to send the message.')
             return None
         except discord.NotFound:
-            print('dest channel is not found')
+            logging.error('dest channel is not found')
             return None
         except discord.HTTPException:
-            print('Sending the message failed.')
+            logging.error('Sending the message failed.')
             return None
         return msg
 
@@ -114,9 +116,9 @@ class Music(discord.Client):
         try:
             return await message.delete()
         except discord.Forbidden:
-            print('cannot delete message: no permission')
+            logging.error('cannot delete message: no permission')
         except discord.NotFound:
-            print('cannot delete message: message not found')
+            logging.error('cannot delete message: message not found')
 
     async def join_vc(self):
         self.channel = self.get_channel(self.config.voice_channel_id)
@@ -154,7 +156,7 @@ class Music(discord.Client):
             else:
                 res = self.res_queue.get_nowait()
                 lock.release()
-                print(res)
+                logging.info(res)
                 response_type = res.get('type')
                 if response_type == 'search':
                     await self.search(res)
@@ -171,7 +173,7 @@ class Music(discord.Client):
                 elif response_type == 'event_queue_change':
                     pass
                 else:
-                    print('error: unexpected response type')
+                    logging.warning('error: unexpected response type')
 
 
     async def set_player_status(self, res):
@@ -472,7 +474,7 @@ class Music(discord.Client):
             try:
                 await asyncio.wait_for(self.post('playnext', cmd_args), timeout=1.0)
             except TimeoutError:
-                print('TimeoutError')
+                logging.error('TimeoutError')
             await self.cmd_queue(message, dest, None)
     """
     async def cmd_add(self, message, dest, *cmd_args):
@@ -636,7 +638,7 @@ class Music(discord.Client):
         try:
             await asyncio.wait_for(self.exit_vc(), timeout=1.0)
         except TimeoutError:
-            print('TimeoutError')
+            logging.error('TimeoutError')
             return
         await self.join_vc()
 
@@ -683,8 +685,8 @@ class Music(discord.Client):
         if message.channel.id != self.config.text_channel_id:
             return
 
-        if message.author.id in self.config.blacklist:
-            print(f'you are in command blacklist! {message.author}:/')
+        if message.author in self.config.blacklist:
+            logging.error(f'you are in command blacklist! {message.author}:/')
             return
 
         if not message.content[:len(self.config.cmd_prefix)] == self.config.cmd_prefix:

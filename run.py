@@ -1,5 +1,6 @@
 import asyncio
 import threading
+import logging
 
 import aiohttp
 
@@ -7,6 +8,11 @@ from bot import Music
 from config import Config
 from websocket_client import ws_ctrl, ws_music
 
+logging.basicConfig(
+                level=logging.INFO,
+                format='[%(asctime)s][%(module)s] %(message)s',
+                datefmt='%Y/%m/%d %H:%M:%S'
+            )
 
 async def main(loop):
     player_queue = asyncio.Queue()

@@ -2,6 +2,7 @@ import asyncio
 import aiohttp
 import threading
 import json
+import logging
 
 lock = asyncio.Lock()
 event = threading.Event()
@@ -23,24 +24,24 @@ class ws_ctrl():
                 op = self.ctrl_queue.get_nowait()
 
         if op:
-            print(op)
             if op[0] == 'discord ready':
                 event.set()
             else:
                 await wsclient.send_json(enclose_packet(op[0], self.key, op[1]))
-                print('post')
+                logging.info(f'post: {op}')
         await asyncio.sleep(0.5)
         self.loop.create_task(self.post_op(wsclient))
 
     async def receive_res(self):
         wsclient = await self.session.ws_connect(self.uri)
-        print('res ws connected')
+        logging.info('res ws connected')
         async for msg in wsclient:
             res = json.loads(msg.data)
             if res.get('type') == 'hello':
                 async with lock:
                     self.global_key['key'] = res.get('key')
                 self.key = res.get('key')
+                logging.info(f'ws key: {self.key}')
                 self.loop.create_task(self.post_op(wsclient))
             else:
                 async with lock:
@@ -62,13 +63,12 @@ class ws_music():
                 key = self.key.get('key')
 
             await wsclient.send_str(key)
-            print('music ws connected')
+            logging.info('music ws connected')
             async for msg in wsclient:
-                #print(msg.data)
+                logging.debug(msg.data)
                 if msg.type == aiohttp.WSMsgType.ERROR:
                     break
                 elif msg.type == aiohttp.WSMsgType.BINARY:
-                    #print(msg.data)
                     async with lock:
                         self.player_queue.put_nowait(msg.data)
 

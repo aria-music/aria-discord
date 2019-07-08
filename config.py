@@ -1,4 +1,5 @@
 import json
+import logging
 
 class Config:
     def __init__(self, config_file, alias_file, blacklist):
@@ -7,7 +8,7 @@ class Config:
             with open(config_file, 'r') as f:
                 conf = json.load(f)
         except FileNotFoundError:
-            print('fatal error: config file does not exist')
+            logging.error('fatal error: config file does not exist')
             exit(1)
 
         self.parse_general_config(conf)
@@ -28,7 +29,7 @@ class Config:
             black = {}
 
         self.parse_blacklist(black)
-    
+
     def parse_general_config(self, conf):
         self.token = conf.get('token')
         self.stream_endpoint = conf.get('stream_endpoint')
@@ -36,7 +37,7 @@ class Config:
         self.voice_channel_id = int(conf.get('voice_channel_id'))
         self.text_channel_id = int(conf.get('text_channel_id'))
         if not self.token or not self.voice_channel_id or not self.text_channel_id:
-            print('fatal error: token or channel_id is None')
+            logging.error('fatal error: token or channel_id is None')
             exit(1)
 
         self.cmd_prefix = conf.get('command_prefix')
