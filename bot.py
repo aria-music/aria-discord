@@ -642,6 +642,21 @@ class Music(discord.Client):
             return
         await self.join_vc()
 
+    async def cmd_show_alias(self, message, dest, *cmd_args):
+        '''
+        show command alias
+
+        usage {prefix}show_alias
+        '''
+        res_text = ''
+        if self.config.alias:
+            res_text = 'alias\n\n'
+            for i in self.config.alias:
+                res_text += f'`{i}` is`{self.config.alias[i]}`\n'
+        else:
+            res_text = 'command alias does not exist\nedit `config/alias.json`'
+        await self.safe_send(dest, res_text)
+
     async def cmd_fuck(self, message, dest, *cmd_args):
         '''
         F U C K Y O U
