@@ -480,22 +480,18 @@ class Music(discord.Client):
         '''
         await self.post('list_queue')
 
-    """
+
     async def cmd_playnext(self, message, dest, *cmd_args):
         '''
         play next
 
         usage {prefix}playnext URL
         '''
-        if cmd_args:
+        if len(cmd_args) != 1:
             await dest.send('error:anger:\n usage `{prefix}playnext URL`'.format(prefix=self.config.cmd_prefix))
-        if len(cmd_args) == 1:
-            try:
-                await asyncio.wait_for(self.post('playnext', cmd_args), timeout=1.0)
-            except TimeoutError:
-                logging.error('TimeoutError')
-            await self.cmd_queue(message, dest, None)
-    """
+            return
+        await self.post('queue', {'uri': cmd_args[0], 'head': True})
+
     async def cmd_add(self, message, dest, *cmd_args):
         '''
         store auto playlist
