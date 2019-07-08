@@ -17,7 +17,7 @@ class Config:
             with open(alias_file, 'r') as f:
                 self.alias = json.load(f)
         except FileNotFoundError:
-            print('alias file does not exist')
+            logging.error('alias file does not exist')
             self.alias = {}
 
         black = None
@@ -25,7 +25,7 @@ class Config:
             with open(blacklist, 'r') as f:
                 black = json.load(f)
         except FileNotFoundError:
-            print('blacklist file does not exist')
+            logging.error('blacklist file does not exist')
             black = {}
 
         self.parse_blacklist(black)
