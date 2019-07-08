@@ -29,8 +29,10 @@ class Music(discord.Client):
             'title': None,
             'album': None,
             'artist': None,
-            'uri': None
+            'uri': None,
+            'is_liked': False
         }
+
         self.nums = [
             ':one:',
             ':two:',
@@ -140,15 +142,18 @@ class Music(discord.Client):
         update game activity
         '''
         song = ''
-        if self.player_status.get('state') == 'playing':
-            song = f'{self.player_status.get("title")}'
-        else:
-            song = u'\u275A\u275A '
-            if self.player_status.get('title'):
-                f'{self.player_status.get("title")}'
+        if self.player_status.get('state') != 'playing':
+            song = u'\u275A\u275A'
+
+        if self.player_status.get('is_liked'):
+            song += u'\u2665 '
+
+        if self.player_status.get('title'):
+            song += f'{self.player_status.get("title")}'
 
         if self.player_status.get('artist'):
             song += f' / {self.player_status.get("artist")}'
+
 
         playing_status = discord.Game(name=song)
         await self.change_presence(status=discord.Status.online, activity=playing_status)
@@ -204,10 +209,14 @@ class Music(discord.Client):
             self.player_status['source'] = entry.get('source')
             self.player_status['title'] = entry.get('title')
             self.player_status['uri'] = entry.get('uri')
+            self.player_status['is_liked'] = entry.get('is_liked')
             if self.player_status['source'] == 'gpm':
                 self.player_status['title'] = entry.get('entry').get('title')
                 self.player_status['album'] = entry.get('entry').get('album')
                 self.player_status['artist'] = entry.get('entry').get('artist')
+            else:
+                self.player_status['album'] = None
+                self.player_status['artist'] = None
         else:
             self.player_status['source'] = None
             self.player_status['title'] = None
@@ -389,10 +398,10 @@ class Music(discord.Client):
             numberd_list += f'**{len(orig_list)}** tracks in queue\n\n'
         for num, song in zip(self.nums, orig_list):
             if song[0] == 'gpm':
-                numberd_list += (f'{num} {song[1]}\n'
+                numberd_list += (f'{num} **{song[1]}**\n'
                                 f'        {song[2]} / {song[3]} - from: gpm\n')
             else:
-                numberd_list += (f'{num} {song[1]}\n'
+                numberd_list += (f'{num} **{song[1]}**\n'
                                 f'        - from: {song[0]}\n')
 
         return numberd_list
@@ -411,7 +420,7 @@ class Music(discord.Client):
             await self.post('queue', {'uri':cmd_args[0]})
         else:
             await self.post('queue', {'uri':[i for i in cmd_args]})
-    """
+
     async def cmd_repeat(self, message, dest, *cmd_args):
         '''
         repeat now-playing song
@@ -419,17 +428,14 @@ class Music(discord.Client):
         usage {prefix}repeat <num>
         '''
         if not cmd_args:
-            await self.post('repeat', '1')
+            await self.post('repeat', {'uri': self.player_status.get('uri')})
             return
-        elif len(cmd_args) == 1:
-            try:
-                num = int(cmd_args)
-                await self.post('repeat', num)
-            except ValueError:
-                await dest.send('error:anger:\nusage: `{prefix}repeat number`'.format(prefix=self.config.cmd_prefix))
-        else:
-            await dest.send('error:anger:\nusage: `{prefix}repeat number`'{prefix}format(prefix=self.config.cmd_prefix))
-    """
+        try:
+            count = int(cmd_args[0])
+            await self.post('repeat', {'uri': self.player_status.get('uri'), 'count': count})
+        except ValueError:
+            await self.post('repeat', {'uri': self.player_status.get('uri')})
+
     async def cmd_pause(self, message, dest, *cmd_args):
         '''
         pause
@@ -524,7 +530,11 @@ class Music(discord.Client):
 
         usage {prefix}np
         '''
-        await self.post('state')
+        try:
+            await asyncio.wait_for(self.post('state'), timeout=1.0)
+        except TimeoutError:
+            logging.error('TimeoutError')
+            return
         res_text = ''
         if self.player_status.get('state') == 'playing':
             res_text = f':arrow_forward: **{self.player_status.get("title")}\n\n**'
@@ -554,25 +564,29 @@ class Music(discord.Client):
         usage {prefix}shuffle
         '''
         await self.post('shuffle')
-    """
+
     async def cmd_purge(self, message, dest, *cmd_args):
         '''
         remove from auto playlist
 
         usage {prefix}purge URLs
         '''
-        if cmd_args:
-            await dest.send('error:anger:\nusage `{prefix}purge URL(s)`'.format(prefix=self.config.cmd_prefix))
+        if not cmd_args:
+            if self.player_status.get('is_liked'):
+                await self.post('remove_from_playlist', {'name':'Likes', 'uri': self.player_status.get('uri')})
+            else:
+                await self.safe_send(dest, 'error:anger:\nThis track is not in Likes')
+            return
         for url in cmd_args:
-            await self.post('purge', url)
-    """
+            await self.post('remove_from_playlist', {'name':'Likes', 'uri': url})
+
     async def cmd_save(self, message, dest, *cmd_args):
         '''
         save song into auto playlist
 
         usage {prefix}save
         '''
-        await self.post('add_to_playlist', {'name': 'pass', 'uri': 'pass'})
+        await self.post('add_to_playlist', {'name': 'Likes', 'uri': self.player_status.get('uri')})
 
     async def cmd_search(self, message, dest, *cmd_args):
         '''

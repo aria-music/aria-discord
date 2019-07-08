@@ -10,8 +10,7 @@ from websocket_client import ws_ctrl, ws_music
 
 logging.basicConfig(
                 level=logging.INFO,
-                format='[%(asctime)s][%(module)s] %(message)s',
-                datefmt='%Y/%m/%d %H:%M:%S'
+                format='[%(asctime)s][%(module)s] %(message)s'
             )
 
 async def main(loop):
