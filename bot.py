@@ -135,6 +135,23 @@ class Music(discord.Client):
         async with lock:
             self.ctrl_queue.put_nowait((op, data))
 
+    async def set_game_activity(self):
+        '''
+        update game activity
+        '''
+        song = ''
+        if self.player_status.get('state') == 'playing':
+            song = f'{self.player_status.get("title")}'
+        else:
+            song = u'\u275A\u275A '
+            if self.player_status.get('title'):
+                f'{self.player_status.get("title")}'
+
+        if self.player_status.get('artist'):
+            song += f' / {self.player_status.get("artist")}'
+
+        playing_status = discord.Game(name=song)
+        await self.change_presence(status=discord.Status.online, activity=playing_status)
 
     def handle_res(self):
         self.loop.create_task(self._handle_res())
@@ -198,6 +215,8 @@ class Music(discord.Client):
             self.player_status['album'] = None
             self.player_status['artist'] = None
             self.player_status['uri'] = None
+
+        await self.set_game_activity()
 
 
     async def search(self, raw_result):
