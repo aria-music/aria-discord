@@ -657,6 +657,20 @@ class Music(discord.Client):
             res_text = 'command alias does not exist\nedit `config/alias.json`'
         await self.safe_send(dest, res_text)
 
+    async def cmd_reload_alias(self, message, dest, *cmd_args):
+        '''
+        reload config/alias.json
+
+        usage {prefix}reload_alias
+        '''
+        try:
+            with open('config/alias.json', 'r') as f:
+                self.config.alias = json.load(f)
+            await self.safe_send(dest, 'alias is updated')
+        except FileNotFoundError:
+            logging.error('alias file does not exist')
+            await self.safe_send(dest, 'alias file does not exist\nNo changed')
+
     async def cmd_fuck(self, message, dest, *cmd_args):
         '''
         F U C K Y O U
@@ -690,7 +704,7 @@ class Music(discord.Client):
         for cmd in self.commandlist:
             print_text += f'{cmd}, '
         print_text += '```'
-        await dest.send(print_text)
+        await self.safe_send(dest, print_text)
 
     ##########################
 
@@ -702,6 +716,8 @@ class Music(discord.Client):
 
         if message.author.id in self.config.blacklist:
             logging.error(f'you are in command blacklist! {message.author}:/')
+            await self.safe_send(message.channel, (f'{message.author.mention}you are in command blacklist! :/\n'
+                                                    'if you want to control, please contact admin of this bot'))
             return
 
         if not message.content[:len(self.config.cmd_prefix)] == self.config.cmd_prefix:
