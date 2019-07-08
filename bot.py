@@ -685,7 +685,7 @@ class Music(discord.Client):
         if message.channel.id != self.config.text_channel_id:
             return
 
-        if message.author in self.config.blacklist:
+        if message.author.id in self.config.blacklist:
             logging.error(f'you are in command blacklist! {message.author}:/')
             return
 
