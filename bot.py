@@ -32,6 +32,7 @@ class Music(discord.Client):
             'uri': None,
             'is_liked': False
         }
+        self.play_queue = {}
 
         self.nums = [
             ':one:',
@@ -178,21 +179,24 @@ class Music(discord.Client):
             else:
                 res = self.res_queue.get_nowait()
                 lock.release()
-                logging.info(res)
                 response_type = res.get('type')
                 if response_type == 'search':
                     await self.search(res)
                 elif response_type == 'list_queue':
-                    await self.queue(res)
+                    await self.set_play_queue(res)
                 elif response_type == 'state':
                     await self.set_player_status(res)
                 elif response_type == 'playlists':
-                    pass
+                    await self.show_playlists(res)
                 elif response_type == 'playlist':
-                    pass
+                    await self.show_likelen(res)
                 elif response_type == 'event_player_state_change':
                     await self.set_player_status(res)
                 elif response_type == 'event_queue_change':
+                    await self.set_play_queue(res)
+                elif response_type == 'event_playlists_change':
+                    pass
+                elif response_type == 'event_playlist_entry_change':
                     pass
                 else:
                     logging.warning('error: unexpected response type')
@@ -227,6 +231,11 @@ class Music(discord.Client):
 
         await self.set_game_activity()
 
+    async def set_play_queue(self, res):
+        '''
+        update self.player_queue
+        '''
+        self.play_queue = res
 
     async def search(self, raw_result):
         '''
@@ -304,7 +313,7 @@ class Music(discord.Client):
                 break
 
         await _send()
-
+    """
     async def queue(self, raw_result):
         dest = self.get_channel(self.config.text_channel_id)
         result = await self.parse_queue(raw_result)
@@ -316,7 +325,7 @@ class Music(discord.Client):
                     f'**{len(result)}** tracks in queue')
         res_text = await self.format_list(result, 'queue')
         await self.safe_send(dest, res_text)
-
+    """
 
     async def parse_result(self, res):
         '''
@@ -377,6 +386,28 @@ class Music(discord.Client):
             else:
                 resp.append((source, title, None, None, uri))
         return resp
+
+    async def show_playlists(self, res):
+        _playlists = {}
+        dest = self.get_channel(self.config.text_channel_id)
+
+        for entry in res.get('data').get('playlists'):
+            _playlists[entry.get('name')] = entry.get('length')
+
+        res_text = ''
+        res_text = 'playlist\n\n'
+        for i in _playlists:
+            res_text += f':file_folder: **{i}** has **{_playlists[i]}** tracks :musical_note:\n'
+        res_text += '\nmore info use web client'
+
+        await self.safe_send(dest, res_text)
+
+    async def show_likelen(self, res):
+        dest = self.get_channel(self.config.text_channel_id)
+
+        lenlist = len(res.get('data').get('entries'))
+
+        await self.safe_send(dest, f'Likes has **{lenlist}** tracks :musical_note: \nmore info use web client')
 
     async def gen_command_list(self):
         self.commandlist = []
@@ -471,12 +502,28 @@ class Music(discord.Client):
         if not cmd_args:
             await self.post('skip')
             return
-        if isinstance(cmd_args[0], int):
-            for _ in range(cmd_args[0]):
-                await self.post('skip')
-        else:
+        try:
+            index = int(cmd_args[0]) - 1
+            await self.post('skip_to', {'index': index, 'uri': self.play_queue.get('data').get('queue')[index].get('uri')})
+        except ValueError:
             await self.post('skip')
 
+    async def cmd_skip_to(self, message, dest, *cmd_args):
+        '''
+        skip to selected entry
+
+        usage {prefix}skip_to num
+        '''
+        if not cmd_args:
+            await self.safe_send(dest, ('error:anger:\n'
+                                        'If you want to skip this track, USE `{prefix}skip`\n'
+                                        'usage `{prefix}skip_to num`'.format(prefix=self.config.cmd_prefix)))
+            return
+        try:
+            index = int(cmd_args[0]) - 1
+            await self.post('skip_to', {'index': index, 'uri': self.play_queue.get('data').get('queue')[index].get('uri')})
+        except ValueError:
+            await self.safe_send(dest, 'error:anger:\n usage `{prefix}skip_to num`'.format(prefix=self.config.cmd_prefix))
 
     async def cmd_queue(self, message, dest, *cmd_args):
         '''
@@ -484,7 +531,15 @@ class Music(discord.Client):
 
         usage {prefix}queue
         '''
-        await self.post('list_queue')
+        result = await self.parse_queue(self.play_queue)
+        if not result:
+            res_text = f'No tracks in queue'
+            await self.safe_send(dest, res_text)
+            return
+        res_text = (f'**play queue**\n'
+                    f'**{len(result)}** tracks in queue')
+        res_text = await self.format_list(result, 'queue')
+        await self.safe_send(dest, res_text)
 
 
     async def cmd_playnext(self, message, dest, *cmd_args):
@@ -504,26 +559,30 @@ class Music(discord.Client):
 
         usage {prefix}add URL(s)
         '''
-        if cmd_args:
+        if not cmd_args:
             await dest.send('error:anger:\n usage `{prefix}add URL(s)`'.format(prefix=self.config.cmd_prefix))
             return
         if len(cmd_args) == 1:
-            await self.post('add_to_playlist', {'uri':cmd_args[0]})
+            await self.post('add_to_playlist', {'name': 'Likes', 'uri':cmd_args[0]})
         else:
-            await self.post('add_to_playlist', {'uri':[i for i in cmd_args]})
-    """
+            for i in cmd_args:
+                await self.post('add_to_playlist', {'name': 'Likes', 'uri':i})
+
     async def cmd_remove(self, message, dest, *cmd_args):
         '''
         remove from queue
 
-        usage {prefix}remove URL(s)
+        usage {prefix}remove num
         '''
-        if cmd_args:
+        if not cmd_args:
             await dest.send('error:anger:\nusage `{prefix}remove URL(s)`'.format(prefix=self.config.cmd_prefix))
-        for url in cmd_args:
-            await self.post('remove', url)
-        await self.cmd_queue(message, dest, None)
-    """
+            return
+        try:
+            index = int(cmd_args[0]) - 1
+            await self.post('remove', {'index': index, 'uri': self.play_queue.get('data').get('queue')[index].get('uri')})
+        except ValueError:
+            await self.safe_send(dest, 'error:anger:\n usage `{prefix}remove num`'.format(prefix=self.config.cmd_prefix))
+
     async def cmd_np(self, message, dest, *cmd_args):
         '''
         show song info
@@ -547,7 +606,30 @@ class Music(discord.Client):
         else:
             res_text += f'        from: **{self.player_status.get("source")}**'
         await self.safe_send(dest, res_text)
+    """
+    async def cmd_like(self, message, dest, *cmd_args):
+        '''
+        save current track to playlist [Likes]
 
+        usage {prefix}like
+        '''
+        await self.post('like', {'uri': self.player_status.get('uri')})
+    """
+    async def cmd_likes(self, message, dest, *cmd_args):
+        '''
+        show how many songs in playlist [Likes]
+
+        usage {prefix}likes
+        '''
+        await self.post('playlist', {'name': 'Likes'})
+
+    async def cmd_playlists(self, message, dest, *cmd_args):
+        '''
+        show playlists name
+
+        usage {prefix}playlists
+        '''
+        await self.post('playlists')
 
     async def cmd_clear(self, message, dest, *cmd_args):
         '''
