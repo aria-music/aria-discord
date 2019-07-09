@@ -1,8 +1,9 @@
 import asyncio
-import aiohttp
-import threading
 import json
 import logging
+import threading
+
+import aiohttp
 
 lock = asyncio.Lock()
 event = threading.Event()

@@ -1,6 +1,7 @@
 import json
 import logging
 
+
 class Config:
     def __init__(self, config_file, alias_file, blacklist):
         self.config_file = config_file

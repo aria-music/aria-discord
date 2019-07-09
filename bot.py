@@ -1,9 +1,9 @@
 import asyncio
 import json
+import logging
 import re
 import textwrap
 import threading
-import logging
 
 import discord
 
