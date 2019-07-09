@@ -37,6 +37,8 @@ class ws_ctrl():
         logging.info('res ws connected')
         async for msg in wsclient:
             res = json.loads(msg.data)
+            logging.info(res)
+            logging.info(res.get('type'))
             if res.get('type') == 'hello':
                 async with lock:
                     self.global_key['key'] = res.get('key')
@@ -65,7 +67,7 @@ class ws_music():
             await wsclient.send_str(key)
             logging.info('music ws connected')
             async for msg in wsclient:
-                logging.debug(msg.data)
+                #logging.debug(msg.data)
                 if msg.type == aiohttp.WSMsgType.ERROR:
                     break
                 elif msg.type == aiohttp.WSMsgType.BINARY:
