@@ -606,7 +606,7 @@ class Music(discord.Client):
         else:
             res_text += f'        from: **{self.player_status.get("source")}**'
         await self.safe_send(dest, res_text)
-    """
+
     async def cmd_like(self, message, dest, *cmd_args):
         '''
         save current track to playlist [Likes]
@@ -614,7 +614,7 @@ class Music(discord.Client):
         usage {prefix}like
         '''
         await self.post('like', {'uri': self.player_status.get('uri')})
-    """
+
     async def cmd_likes(self, message, dest, *cmd_args):
         '''
         show how many songs in playlist [Likes]
@@ -788,6 +788,12 @@ class Music(discord.Client):
         '''
         fuck_str = ':regional_indicator_f: :regional_indicator_u: :regional_indicator_c: :regional_indicator_k: :regional_indicator_y: :regional_indicator_o: :regional_indicator_u: '
         await self.safe_send(dest, fuck_str, message.author.mention)
+
+    async def cmd_uc(self, message, dest, *cmd_args):
+        '''
+        U           C
+        '''
+        await self.post('play', {'uri': 'https://youtu.be/ZHbzi_stmiI'})
 
     async def cmd_help(self, message, dest, *cmd_args):
         '''
