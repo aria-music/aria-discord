@@ -614,6 +614,7 @@ class Music(discord.Client):
                         '        from: **gpm**')
         else:
             res_text += f'        from: **{self.player_status.get("source")}**'
+        res_text += f'\n        uri: {self.player_status.get("uri")}'
         await self.safe_send(dest, res_text)
 
     async def cmd_like(self, message, dest, *cmd_args):
