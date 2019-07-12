@@ -504,7 +504,10 @@ class Music(discord.Client):
             return
         try:
             index = int(cmd_args[0]) - 1
-            await self.post('skip_to', {'index': index, 'uri': self.play_queue.get('data').get('queue')[index].get('uri')})
+            if index <= len(self.play_queue):
+                await self.post('skip_to', {'index': index, 'uri': self.play_queue.get('data').get('queue')[index].get('uri')})
+            else:
+                await self.safe_send(dest, f'{index} is out of queue range')
         except ValueError:
             await self.post('skip')
 
@@ -521,7 +524,10 @@ class Music(discord.Client):
             return
         try:
             index = int(cmd_args[0]) - 1
-            await self.post('skip_to', {'index': index, 'uri': self.play_queue.get('data').get('queue')[index].get('uri')})
+            if index <= len(self.play_queue):
+                await self.post('skip_to', {'index': index, 'uri': self.play_queue.get('data').get('queue')[index].get('uri')})
+            else:
+                await self.safe_send(dest, f'{index} is out of queue range')
         except ValueError:
             await self.safe_send(dest, 'error:anger:\n usage `{prefix}skip_to num`'.format(prefix=self.config.cmd_prefix))
 
@@ -579,7 +585,10 @@ class Music(discord.Client):
             return
         try:
             index = int(cmd_args[0]) - 1
-            await self.post('remove', {'index': index, 'uri': self.play_queue.get('data').get('queue')[index].get('uri')})
+            if index <= len(self.play_queue):
+                await self.post('remove', {'index': index, 'uri': self.play_queue.get('data').get('queue')[index].get('uri')})
+            else:
+                await self.safe_send(dest, f'{index} is out of queue range')
         except ValueError:
             await self.safe_send(dest, 'error:anger:\n usage `{prefix}remove num`'.format(prefix=self.config.cmd_prefix))
 
@@ -668,7 +677,7 @@ class Music(discord.Client):
 
         usage {prefix}save
         '''
-        await self.post('add_to_playlist', {'name': 'Likes', 'uri': self.player_status.get('uri')})
+        await self.post('add_to_playlist', {'name': cmd_args[0], 'uri': self.player_status.get('uri')})
 
     async def cmd_search(self, message, dest, *cmd_args):
         '''
@@ -708,6 +717,16 @@ class Music(discord.Client):
         else:
             query = ' '.join(cmd_args)
             await self.post('search', {'query': query, 'provider': 'youtube'})
+
+    async def cmd_s(self, message, dest, *cmd_args):
+        if not cmd_args:
+            await self.post('skip')
+            return
+        try:
+            int(cmd_args[0])
+            await self.cmd_skip_to(message, dest, *cmd_args)
+        except ValueError:
+            await self.cmd_search(message, dest, *cmd_args)
 
     async def cmd_join(self, message, dest, *cmd_args):
         '''
@@ -788,6 +807,10 @@ class Music(discord.Client):
         '''
         fuck_str = ':regional_indicator_f: :regional_indicator_u: :regional_indicator_c: :regional_indicator_k: :regional_indicator_y: :regional_indicator_o: :regional_indicator_u: '
         await self.safe_send(dest, fuck_str, message.author.mention)
+
+    async def cmd_potg(self, message, dest, *cmd_args):
+        potg_str = ':right_facing_fist: :left_facing_fist: 推薦されました:チームプレイヤー'
+        await self.safe_send(dest, potg_str, message.author.mention)
 
     async def cmd_uc(self, message, dest, *cmd_args):
         '''
