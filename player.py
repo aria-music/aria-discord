@@ -1,6 +1,5 @@
 import asyncio
 import threading
-from time import time
 
 import discord
 
@@ -23,9 +22,7 @@ async def _play(player_queue, vc):
 
     count = 0
     output: bytearray = []
-    loop_time = time()
     while True:
-        loop_time += 0.02
         await lock.acquire()
         if player_queue.empty():
             lock.release()
@@ -42,4 +39,3 @@ async def _play(player_queue, vc):
                 vc.send_audio_packet(s, encode=False)
             count = 0
             output.clear()
-        #await asyncio.sleep(max(0, loop_time-time()))
