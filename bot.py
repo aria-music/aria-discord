@@ -673,11 +673,15 @@ class Music(discord.Client):
 
     async def cmd_save(self, message, dest, *cmd_args):
         '''
-        save song into auto playlist
+        save song into playlist
 
         usage {prefix}save
         '''
-        await self.post('add_to_playlist', {'name': cmd_args[0], 'uri': self.player_status.get('uri')})
+        if not cmd_args:
+            await self.post('add_to_playlist', {'name': 'Likes', 'uri': self.player_status.get('uri')})
+        else:
+            for pl in cmd_args:
+                await self.post('add_to_playlist', {'name': pl, 'uri': self.player_status.get('uri')})
 
     async def cmd_search(self, message, dest, *cmd_args):
         '''
