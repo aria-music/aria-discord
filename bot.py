@@ -502,14 +502,7 @@ class Music(discord.Client):
         if not cmd_args:
             await self.post('skip')
             return
-        try:
-            index = int(cmd_args[0]) - 1
-            if index <= len(self.play_queue):
-                await self.post('skip_to', {'index': index, 'uri': self.play_queue.get('data').get('queue')[index].get('uri')})
-            else:
-                await self.safe_send(dest, f'{index} is out of queue range')
-        except ValueError:
-            await self.post('skip')
+        await self.cmd_skip_to(message, dest, *cmd_args)
 
     async def cmd_skip_to(self, message, dest, *cmd_args):
         '''
@@ -524,10 +517,10 @@ class Music(discord.Client):
             return
         try:
             index = int(cmd_args[0]) - 1
-            if index <= len(self.play_queue):
+            if index <= len(self.play_queue.get('data').get('queue')):
                 await self.post('skip_to', {'index': index, 'uri': self.play_queue.get('data').get('queue')[index].get('uri')})
             else:
-                await self.safe_send(dest, f'{index} is out of queue range')
+                await self.safe_send(dest, f'{index+1} is out of queue range')
         except ValueError:
             await self.safe_send(dest, 'error:anger:\n usage `{prefix}skip_to num`'.format(prefix=self.config.cmd_prefix))
 
@@ -623,7 +616,8 @@ class Music(discord.Client):
 
         usage {prefix}like
         '''
-        await self.post('like', {'uri': self.player_status.get('uri')})
+        if not self.player_status.get('is_liked'):
+            await self.post('like', {'uri': self.player_status.get('uri')})
 
     async def cmd_likes(self, message, dest, *cmd_args):
         '''
