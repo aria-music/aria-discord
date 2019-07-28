@@ -30,7 +30,9 @@ class Music(discord.Client):
             'album': None,
             'artist': None,
             'uri': None,
-            'is_liked': False
+            'is_liked': False,
+            'duration': None,
+            'position': None
         }
         self.play_queue = {}
 
@@ -214,6 +216,8 @@ class Music(discord.Client):
             self.player_status['title'] = entry.get('title')
             self.player_status['uri'] = entry.get('uri')
             self.player_status['is_liked'] = entry.get('is_liked')
+            self.player_status['duration'] = entry.get('duration')
+            self.player_status['position'] = entry.get('position')
             if self.player_status['source'] == 'gpm':
                 self.player_status['title'] = entry.get('entry').get('title')
                 self.player_status['album'] = entry.get('entry').get('album')
@@ -228,6 +232,9 @@ class Music(discord.Client):
             self.player_status['album'] = None
             self.player_status['artist'] = None
             self.player_status['uri'] = None
+            self.player_status['is_liked'] = False
+            self.player_status['duration'] = None
+            self.player_status['position'] = None
 
         await self.set_game_activity()
 
@@ -604,10 +611,16 @@ class Music(discord.Client):
         if self.player_status.get('source') == 'gpm':
             res_text += (f'        album: **{self.player_status.get("album")}**\n'
                         f'        artist: **{self.player_status.get("artist")}**\n'
-                        '        from: **gpm**')
+                        '        from: **gpm**\n'
+                        f'        uri: {self.player_status.get("uri")}\n')
         else:
-            res_text += f'        from: **{self.player_status.get("source")}**'
-        res_text += f'\n        uri: {self.player_status.get("uri")}'
+            res_text += (f'        from: **{self.player_status.get("source")}**\n'
+                         f'        uri: <{self.player_status.get("uri")}>\n')
+
+        def _format_time (song_len):
+            return f'{int(song_len/60)}:{int(song_len%60)}'
+
+        res_text += f'        position: {_format_time(self.player_status.get("position"))} / {_format_time(self.player_status.get("duration"))}'
         await self.safe_send(dest, res_text)
 
     async def cmd_like(self, message, dest, *cmd_args):
@@ -634,6 +647,17 @@ class Music(discord.Client):
         usage {prefix}playlists
         '''
         await self.post('playlists')
+
+    async def cmd_mklist(self, message, dest, *cmd_args):
+        '''
+        create playlist
+
+        usage {prefix}mklist
+        '''
+        if not cmd_args:
+            await self.safe_send(dest, 'error:anger:\nusage: `{prefix}play URL`'.format(prefix=self.config.cmd_prefix))
+            return
+        await self.post('create_playlist', {'name': cmd_args[0]})
 
     async def cmd_clear(self, message, dest, *cmd_args):
         '''
