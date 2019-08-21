@@ -159,7 +159,7 @@ class Music(discord.Client):
 
 
         playing_status = discord.Game(name=song)
-        await self.change_presence(status=discord.Status.online, activity=playing_status)
+        await self.change_presence(activity=playing_status)
 
     def handle_res(self):
         self.loop.create_task(self._handle_res())
@@ -187,7 +187,7 @@ class Music(discord.Client):
                 elif response_type == 'list_queue':
                     await self.set_play_queue(res)
                 elif response_type == 'state':
-                    await self.set_player_status(res)
+                    await self.show_np(res)
                 elif response_type == 'playlists':
                     await self.show_playlists(res)
                 elif response_type == 'playlist':
@@ -333,6 +333,33 @@ class Music(discord.Client):
         res_text = await self.format_list(result, 'queue')
         await self.safe_send(dest, res_text)
     """
+
+    async def show_np(self, res):
+        dest = self.get_channel(self.config.text_channel_id)
+        try:
+            await asyncio.wait_for(self.set_player_status(res), timeout=1.0)
+            res_text = ''
+            if self.player_status.get('state') == 'playing':
+                res_text = f':arrow_forward: **{self.player_status.get("title")}\n\n**'
+            else:
+                res_text = f':pause_button: **{self.player_status.get("title")}\n\n**'
+            if self.player_status.get('source') == 'gpm':
+                res_text += (f'        album: **{self.player_status.get("album")}**\n'
+                            f'        artist: **{self.player_status.get("artist")}**\n'
+                            '        from: **gpm**\n'
+                            f'        uri: {self.player_status.get("uri")}\n')
+            else:
+                res_text += (f'        from: **{self.player_status.get("source")}**\n'
+                            f'        uri: <{self.player_status.get("uri")}>\n')
+
+            def _format_time (song_len):
+                return f'{int(song_len/60)}:{int(song_len%60)}'
+
+            res_text += f'        position: {_format_time(self.player_status.get("position"))} / {_format_time(self.player_status.get("duration"))}'
+            await self.safe_send(dest, res_text)
+        except TimeoutError:
+            logging.error('TimeoutError')
+            return
 
     async def parse_result(self, res):
         '''
@@ -598,30 +625,7 @@ class Music(discord.Client):
 
         usage {prefix}np
         '''
-        try:
-            await asyncio.wait_for(self.post('state'), timeout=1.0)
-        except TimeoutError:
-            logging.error('TimeoutError')
-            return
-        res_text = ''
-        if self.player_status.get('state') == 'playing':
-            res_text = f':arrow_forward: **{self.player_status.get("title")}\n\n**'
-        else:
-            res_text = f':pause_button: **{self.player_status.get("title")}\n\n**'
-        if self.player_status.get('source') == 'gpm':
-            res_text += (f'        album: **{self.player_status.get("album")}**\n'
-                        f'        artist: **{self.player_status.get("artist")}**\n'
-                        '        from: **gpm**\n'
-                        f'        uri: {self.player_status.get("uri")}\n')
-        else:
-            res_text += (f'        from: **{self.player_status.get("source")}**\n'
-                         f'        uri: <{self.player_status.get("uri")}>\n')
-
-        def _format_time (song_len):
-            return f'{int(song_len/60)}:{int(song_len%60)}'
-
-        res_text += f'        position: {_format_time(self.player_status.get("position"))} / {_format_time(self.player_status.get("duration"))}'
-        await self.safe_send(dest, res_text)
+        await self.post('state')
 
     async def cmd_like(self, message, dest, *cmd_args):
         '''
