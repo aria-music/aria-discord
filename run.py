@@ -22,12 +22,12 @@ async def main(loop):
     config = Config('config/config.json', 'config/alias.json', 'config/blacklist.json')
     session = aiohttp.ClientSession()
 
-    th0 = threading.Thread(target=discord_loader, args=(config, player_queue, res_queue, ctrl_queue, loop),name='discord',  daemon=True)
-    th1 = threading.Thread(target=ctrl_loader, args=(ctrl_queue, res_queue, session, config.cmd_endpoint, key, loop), name='ctrl', daemon=True)
-    th2 = threading.Thread(target=music_loader, args=(player_queue, session, config.stream_endpoint, key, loop), name='music', daemon=True)
-    th0.start()
-    th1.start()
-    th2.start()
+    discord = threading.Thread(target=discord_loader, args=(config, player_queue, res_queue, ctrl_queue, loop),name='discord',  daemon=True)
+    ctrl = threading.Thread(target=ctrl_loader, args=(ctrl_queue, res_queue, session, config.cmd_endpoint, key, loop), name='ctrl', daemon=True)
+    music = threading.Thread(target=music_loader, args=(player_queue, session, config.stream_endpoint, key, loop), name='music', daemon=True)
+    discord.start()
+    ctrl.start()
+    music.start()
 
 def discord_loader(config, player_queue, res_queue, ctrl_queue, loop):
     asyncio.set_event_loop(loop)

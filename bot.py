@@ -9,7 +9,6 @@ import discord
 
 from config import Config
 from opus_loader import load_opus_libs
-from player import play
 
 lock = asyncio.Lock()
 
@@ -22,6 +21,8 @@ class Music(discord.Client):
         self.res_queue = res_queue
         self.ctrl_queue = ctrl_queue
         self.loop = loop
+        self.count = 0
+        self.output: bytearray = []
 
         self.player_status = {
             'state': False,
@@ -83,9 +84,9 @@ class Music(discord.Client):
         await self.join_vc()
         await self.post('discord ready')
         logging.info('discord vc connect')
-        player = threading.Thread(target=play, args=(self.player_queue, self.voice, self.loop), daemon=True)
         response_handler = threading.Thread(target=self.handle_res, daemon=True)
-        player.start()
+        self.voice.loop.create_task(self._play())
+
         response_handler.start()
         logging.info('connected to vc')
 
@@ -160,6 +161,24 @@ class Music(discord.Client):
 
         playing_status = discord.Game(name=song)
         await self.change_presence(activity=playing_status)
+
+    async def _play(self):
+        await lock.acquire()
+        if self.player_queue.empty():
+            lock.release()
+            await asyncio.sleep(0.01)
+        else:
+            data = self.player_queue.get_nowait()
+            lock.release()
+            self.count += 1
+            self.output.append(data)
+
+        if self.count == 10:
+            for s in self.output:
+                self.voice.send_audio_packet(s, encode=False)
+            self.count = 0
+            self.output.clear()
+        self.voice.loop.create_task(self._play())
 
     def handle_res(self):
         self.loop.create_task(self._handle_res())
@@ -872,6 +891,14 @@ class Music(discord.Client):
             print_text += f'{cmd}, '
         print_text += '```'
         await self.safe_send(dest, print_text)
+
+
+    async def cmd_test(self, message, dest, *cmd_args):
+        '''
+        何でも屋
+        '''
+        hoge = [f'{i}, ' for i in self.voice.channel.members]
+        await self.safe_send(dest, hoge)
 
     ##########################
 
