@@ -38,8 +38,8 @@ class ws_ctrl():
         logging.info('res ws connected')
         async for msg in wsclient:
             res = json.loads(msg.data)
-            logging.info(res)
-            logging.info(res.get('type'))
+            #logging.info(res)
+            #logging.info(res.get('type'))
             if res.get('type') == 'hello':
                 async with lock:
                     self.global_key['key'] = res.get('key')

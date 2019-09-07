@@ -9,7 +9,7 @@ from config import Config
 from websocket_client import ws_ctrl, ws_music
 
 logging.basicConfig(
-                level=logging.INFO,
+                level=logging.DEBUG,
                 format='[%(asctime)s][%(module)s] %(message)s'
             )
 

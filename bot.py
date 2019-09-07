@@ -22,6 +22,7 @@ class Music(discord.Client):
         self.ctrl_queue = ctrl_queue
         self.loop = loop
         self.count = 0
+        self.vc_members = 1
         self.output: bytearray = []
 
         self.player_status = {
@@ -131,8 +132,22 @@ class Music(discord.Client):
         self.voice = await self.channel.connect()
 
     async def exit_vc(self):
-        self.player = None
         await self.voice.disconnect()
+        self.voice = None
+
+    async def reconnect(self):
+        try:
+            await asyncio.wait_for(self.exit_vc(), timeout=0.2)
+        except TimeoutError:
+            logging.error('TimeoutError')
+            return
+        await self.join_vc()
+
+    async def on_voice_state_update(self, member, before, after):
+        if self.vc_members != len(self.voice.channel.members):
+            if self.vc_members < len(self.voice.channel.members):
+                await self.reconnect()
+            self.vc_members = len(self.voice.channel.members)
 
     async def post(self, op, data=None):
         '''
@@ -175,10 +190,13 @@ class Music(discord.Client):
 
         if self.count == 10:
             for s in self.output:
-                self.voice.send_audio_packet(s, encode=False)
+                if self.voice:
+                    self.voice.send_audio_packet(s, encode=False)
+                else:
+                    pass
             self.count = 0
             self.output.clear()
-        self.voice.loop.create_task(self._play())
+        await self.loop.create_task(self._play())
 
     def handle_res(self):
         self.loop.create_task(self._handle_res())
@@ -256,6 +274,12 @@ class Music(discord.Client):
             self.player_status['position'] = None
 
         await self.set_game_activity()
+
+        if self.player_status['state'] == 'stopped':
+            await lock.acquire()
+            while not self.player_queue.empty():
+                self.player_queue.get_nowait()
+            lock.release()
 
     async def set_play_queue(self, res):
         '''
@@ -805,19 +829,6 @@ class Music(discord.Client):
         await self.logout()
         exit(1)
 
-    async def cmd_reconnect(self, message, dest, *cmd_args):
-        '''
-        reconnect VC
-
-        usage {prefix}reconnect
-        '''
-        try:
-            await asyncio.wait_for(self.exit_vc(), timeout=1.0)
-        except TimeoutError:
-            logging.error('TimeoutError')
-            return
-        await self.join_vc()
-
     async def cmd_show_alias(self, message, dest, *cmd_args):
         '''
         show command alias
@@ -892,13 +903,11 @@ class Music(discord.Client):
         print_text += '```'
         await self.safe_send(dest, print_text)
 
-
     async def cmd_test(self, message, dest, *cmd_args):
         '''
         何でも屋
         '''
-        hoge = [f'{i}, ' for i in self.voice.channel.members]
-        await self.safe_send(dest, hoge)
+        await self.post('play', {'uri': 'https://youtu.be/ZHbzi_stmiI'})
 
     ##########################
 
