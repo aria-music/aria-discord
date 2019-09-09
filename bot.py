@@ -22,7 +22,7 @@ class Music(discord.Client):
         self.ctrl_queue = ctrl_queue
         self.loop = loop
         self.count = 0
-        self.vc_members = 1
+        self.vc_members = 0
         self.output: bytearray = []
 
         self.player_status = {
@@ -86,6 +86,7 @@ class Music(discord.Client):
         await self.post('discord ready')
         logging.info('discord vc connect')
         response_handler = threading.Thread(target=self.handle_res, daemon=True)
+        self.vc_members = len(self.voice.channel.members)
         self.voice.loop.create_task(self._play())
 
         response_handler.start()
@@ -135,7 +136,7 @@ class Music(discord.Client):
         await self.voice.disconnect()
         self.voice = None
 
-    async def reconnect(self):
+    async def cmd_reconnect(self, message=None, dest=None, cmd_args=[]):
         try:
             await asyncio.wait_for(self.exit_vc(), timeout=0.2)
         except TimeoutError:
@@ -146,7 +147,7 @@ class Music(discord.Client):
     async def on_voice_state_update(self, member, before, after):
         if self.vc_members != len(self.voice.channel.members):
             if self.vc_members < len(self.voice.channel.members):
-                await self.reconnect()
+                await self.cmd_reconnect()
             self.vc_members = len(self.voice.channel.members)
 
     async def post(self, op, data=None):
