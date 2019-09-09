@@ -526,9 +526,12 @@ class Music(discord.Client):
             await self.safe_send(dest, 'error:anger:\nusage: `{prefix}play URL`'.format(prefix=self.config.cmd_prefix))
             return
         if len(cmd_args) == 1:
-            await self.post('queue', {'uri':cmd_args[0]})
+            if cmd_args[0][0] == '<':
+                await self.post('queue', {'uri':cmd_args[0][1:-1]})
+            else:
+                await self.post('queue', {'uri':cmd_args[0]})
         else:
-            await self.post('queue', {'uri':[i for i in cmd_args]})
+            await self.post('queue', {'uri':[i if i[0] != '<' else i[1:-1] for i in cmd_args]})
 
     async def cmd_repeat(self, message, dest, *cmd_args):
         '''
@@ -640,10 +643,16 @@ class Music(discord.Client):
             await dest.send('error:anger:\n usage `{prefix}add URL(s)`'.format(prefix=self.config.cmd_prefix))
             return
         if len(cmd_args) == 1:
-            await self.post('add_to_playlist', {'name': 'Likes', 'uri':cmd_args[0]})
+            if cmd_args[0][0] == '<':
+                await self.post('add_to_playlist', {'name': 'Likes', 'uri':cmd_args[0][1:-1]})
+            else:
+                await self.post('add_to_playlist', {'name': 'Likes', 'uri':cmd_args[0]})
         else:
             for i in cmd_args:
-                await self.post('add_to_playlist', {'name': 'Likes', 'uri':i})
+                if i[0] == '<':
+                    await self.post('add_to_playlist', {'name': 'Likes', 'uri':i[1:-1]})
+                else:
+                    await self.post('add_to_playlist', {'name': 'Likes', 'uri':i})
 
     async def cmd_remove(self, message, dest, *cmd_args):
         '''
