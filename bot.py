@@ -948,3 +948,5 @@ class Music(discord.Client):
 
         if handler:
             await handler(message, message.channel, *args)
+        else:
+            await self.safe_send(message.channel, 'いやいやいやいや\nそんな⌘ないけどガイジですか??????????', message.author.mention)
