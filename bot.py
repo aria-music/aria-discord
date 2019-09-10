@@ -330,7 +330,7 @@ class Music(discord.Client):
             for i in range(len(show)):
                 await msg.add_reaction(self.unicode_nums[i])
             for i in ['fast_forward', 'no_entry_sign', 'white_check_mark']:
-               await msg.add_reaction(self.control[i])
+                await msg.add_reaction(self.control[i])
 
             def check(reaction, user):
                 return user != msg.author and reaction.message.id == msg.id
