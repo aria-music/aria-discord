@@ -22,6 +22,7 @@ class Music(discord.Client):
         self.ctrl_queue = ctrl_queue
         self.loop = loop
         self.count = 0
+        self.voice = None
         self.vc_members = 0
         self.output: bytearray = []
 
@@ -129,8 +130,8 @@ class Music(discord.Client):
             logging.error('cannot delete message: message not found')
 
     async def join_vc(self):
-        self.channel = self.get_channel(self.config.voice_channel_id)
-        self.voice = await self.channel.connect()
+        self.voice_channel = self.get_channel(self.config.voice_channel_id)
+        self.voice = await self.voice_channel.connect()
 
     async def exit_vc(self):
         await self.voice.disconnect()
@@ -145,6 +146,8 @@ class Music(discord.Client):
         await self.join_vc()
 
     async def on_voice_state_update(self, member, before, after):
+        if not self.voice:
+            return
         if self.vc_members != len(self.voice.channel.members):
             if self.vc_members < len(self.voice.channel.members):
                 await self.cmd_reconnect()
@@ -807,7 +810,7 @@ class Music(discord.Client):
 
         usage {prefix}join
         '''
-        if self.voice.is_connected():
+        if self.voice:
             await dest.send(f'{self.user} is already in VC')
             return
         await self.join_vc()
@@ -818,7 +821,7 @@ class Music(discord.Client):
 
         usage {prefix}kick
         '''
-        if not self.voice.is_connected():
+        if not self.voice:
             await dest.send(f'{self.user} is not in VC')
             return
         await self.exit_vc()
