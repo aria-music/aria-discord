@@ -206,37 +206,35 @@ class Music(discord.Client):
         self.loop.create_task(self._handle_res())
 
     async def _handle_res(self):
-        await lock.acquire()
-        if self.res_queue.empty():
-            lock.release()
-            await asyncio.sleep(0.05)
-        else:
-            res = self.res_queue.get_nowait()
-            lock.release()
-            response_type = res.get('type')
-            if response_type == 'search':
-                self.loop.create_task(self.search(res))
-            elif response_type == 'list_queue':
-                self.loop.create_task(self.set_play_queue(res))
-            elif response_type == 'state':
-                self.loop.create_task(self.show_np(res))
-            elif response_type == 'playlists':
-                self.loop.create_task(self.show_playlists(res))
-            elif response_type == 'playlist':
-                self.loop.create_task(self.show_likelen(res))
-            elif response_type == 'event_player_state_change':
-                self.loop.create_task(self.set_player_status(res))
-            elif response_type == 'event_queue_change':
-                self.loop.create_task(self.set_play_queue(res))
-            elif response_type == 'event_playlists_change':
-                pass
-            elif response_type == 'event_playlist_entry_change':
-                pass
+        while True:
+            await lock.acquire()
+            if self.res_queue.empty():
+                lock.release()
+                await asyncio.sleep(0.05)
             else:
-                logging.warning('error: unexpected response type')
-
-        self.loop.create_task(self._handle_res())
-
+                res = self.res_queue.get_nowait()
+                lock.release()
+                response_type = res.get('type')
+                if response_type == 'search':
+                    self.loop.create_task(self.search(res))
+                elif response_type == 'list_queue':
+                    self.loop.create_task(self.set_play_queue(res))
+                elif response_type == 'state':
+                    self.loop.create_task(self.show_np(res))
+                elif response_type == 'playlists':
+                    self.loop.create_task(self.show_playlists(res))
+                elif response_type == 'playlist':
+                    self.loop.create_task(self.show_likelen(res))
+                elif response_type == 'event_player_state_change':
+                    self.loop.create_task(self.set_player_status(res))
+                elif response_type == 'event_queue_change':
+                    self.loop.create_task(self.set_play_queue(res))
+                elif response_type == 'event_playlists_change':
+                    pass
+                elif response_type == 'event_playlist_entry_change':
+                    pass
+                else:
+                    logging.warning('error: unexpected response type')
 
     async def set_player_status(self, res):
         '''
