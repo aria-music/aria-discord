@@ -759,12 +759,7 @@ class Music(discord.Client):
 
         usage {prefix}search keyword
         '''
-        if not cmd_args:
-            await dest.send('error:anger:\nusage `{prefix}search keyword`'.format(prefix=self.config.cmd_prefix))
-            return
-        else:
-            query = ' '.join(cmd_args)
-            await self.post('search', {'query': query})
+        await self._cmd_search(dest, None, cmd_args)
 
     async def cmd_gsearch(self, message, dest, *cmd_args):
         '''
@@ -772,12 +767,7 @@ class Music(discord.Client):
 
         usage {prefix}gsearch keyword
         '''
-        if not cmd_args:
-            await dest.send('error:anger:\nusage `{prefix}gsearch keyword`'.format(prefix=self.config.cmd_prefix))
-            return
-        else:
-            query = ' '.join(cmd_args)
-            await self.post('search', {'query': query, 'provider': 'gpm'})
+        await self._cmd_search(dest, 'gpm', cmd_args)
 
     async def cmd_ysearch(self, message, dest, *cmd_args):
         '''
@@ -785,12 +775,21 @@ class Music(discord.Client):
 
         usage {prefix}ysearch keyword
         '''
+        await self._cmd_search(dest, 'youtube', cmd_args)
+
+    async def _cmd_search(self, dest, provider, cmd_args):
+        '''
+        search
+        '''
         if not cmd_args:
-            await dest.send('error:anger:\nusage `{prefix}ysearch keyword`'.format(prefix=self.config.cmd_prefix))
+            await dest.send('error:anger:\nusage `{prefix}search keyword`'.format(prefix=self.config.cmd_prefix))
             return
+
+        query = ' '.join(cmd_args)
+        if provider:
+            await self.post('search', {'query': query, 'provider': provider})
         else:
-            query = ' '.join(cmd_args)
-            await self.post('search', {'query': query, 'provider': 'youtube'})
+            await self.post('search', {'query': query})
 
     async def cmd_s(self, message, dest, *cmd_args):
         if not cmd_args:
