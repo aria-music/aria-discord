@@ -879,6 +879,20 @@ class Music(discord.Client):
         '''
         await self.post('play', {'uri': 'https://youtu.be/ZHbzi_stmiI'})
 
+    async def cmd_updatedb(self, message, dest, *cmd_args):
+        '''
+        gpmのライブラリをアップデートするコマンド
+
+        usage {prefix}updatedb
+        '''
+        await self.post('update_db')
+
+    async def cmd_web(self, message, dest, *cmd_args):
+        '''
+        open web ui
+        '''
+        await self.safe_send(dest, 'Open web player\n:point_right: https://gaiji.pro/#/play')
+
     async def cmd_help(self, message, dest, *cmd_args):
         '''
         show commandlist
@@ -911,7 +925,7 @@ class Music(discord.Client):
         '''
         何でも屋
         '''
-        await self.post('play', {'uri': 'https://youtu.be/ZHbzi_stmiI'})
+        await self.post('play', {'playlist': 'みんな大好きゆゆうた'})
 
     ##########################
 
