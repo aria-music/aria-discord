@@ -934,14 +934,15 @@ class Music(discord.Client):
         if message.channel.id != self.config.text_channel_id:
             return
 
+        if not message.content[:len(self.config.cmd_prefix)] == self.config.cmd_prefix:
+            return
+
         if message.author.id in self.config.blacklist:
             logging.error(f'you are in command blacklist! {message.author}:/')
             await self.safe_send(message.channel, (f'{message.author.mention}you are in command blacklist! :/\n'
                                                     'if you want to control, please contact admin of this bot'))
             return
 
-        if not message.content[:len(self.config.cmd_prefix)] == self.config.cmd_prefix:
-            return
         message_content = message.content[len(self.config.cmd_prefix):].strip()
         command, *args = message_content.split(' ')
         command = command.lower()
