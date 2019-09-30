@@ -77,7 +77,8 @@ class Music(discord.Client):
             'rewind': '\U000023EA',
             'ok': '\U0001F197',
             'no_entry_sign': '\U0001F6AB',
-            'white_check_mark': '\U00002705'
+            'white_check_mark': '\U00002705',
+            'play_all': '\U0001F35C'
         }
 
     async def on_ready(self):
@@ -291,18 +292,19 @@ class Music(discord.Client):
         raw_result: dict
         '''
         dest = self.get_channel(self.config.text_channel_id)
-        result = await self.parse_result(raw_result)
-        if not result:
+        results = await self.parse_result(raw_result)
+        if not results:
             res_text = f'Sorry\ncould not find any track'
             await self.safe_send(dest, res_text)
             return
 
         res_text = (f'**search result**\n'
-                    f'**{len(result)}** hits')
+                    f'**{len(results)}** hits')
         await self.safe_send(dest, res_text)
 
         res_count = self.config.serch_result_count
-        total_page = -(-len(result) // res_count)
+        total_page = -(-len(results) // res_count)
+        result = results
         to_play = []
 
         async def _send():
@@ -323,7 +325,7 @@ class Music(discord.Client):
 
             for i in range(len(show)):
                 await msg.add_reaction(self.unicode_nums[i])
-            for i in ['fast_forward', 'no_entry_sign', 'white_check_mark']:
+            for i in ['fast_forward', 'no_entry_sign', 'white_check_mark', 'play_all']:
                 await msg.add_reaction(self.control[i])
 
             def check(reaction, user):
@@ -334,15 +336,20 @@ class Music(discord.Client):
                 try:
                     reaction, _ = await self.wait_for('reaction_add', timeout=60.0, check=check)
 
-                    if str(reaction.emoji) == '\U000023E9':#fast_forward
+                    if str(reaction.emoji) == self.control['fast_forward']: #go next page
                         await self.safe_delete(msg)
                         next_page = True
                         break
-                    elif str(reaction.emoji) == '\U0001F6AB':#no_entry_sign
+                    elif str(reaction.emoji) == self.control['no_entry_sign']: #cancel
                         await self.safe_delete(msg)
                         return
-                    elif str(reaction.emoji) == '\U00002705':#white_check_mark
+                    elif str(reaction.emoji) == self.control['white_check_mark']: #submit
                         await self.safe_delete(msg)
+                        break
+                    elif str(reaction.emoji) == self.control['play_all']: #play all
+                        await self.safe_delete(msg)
+                        to_play.clear()
+                        to_play = [i[4] for i in results]
                         break
 
                     select = self.inv_unicode_nums.get(str(reaction.emoji))
@@ -934,14 +941,15 @@ class Music(discord.Client):
         if message.channel.id != self.config.text_channel_id:
             return
 
+        if not message.content[:len(self.config.cmd_prefix)] == self.config.cmd_prefix:
+            return
+
         if message.author.id in self.config.blacklist:
             logging.error(f'you are in command blacklist! {message.author}:/')
             await self.safe_send(message.channel, (f'{message.author.mention}you are in command blacklist! :/\n'
                                                     'if you want to control, please contact admin of this bot'))
             return
 
-        if not message.content[:len(self.config.cmd_prefix)] == self.config.cmd_prefix:
-            return
         message_content = message.content[len(self.config.cmd_prefix):].strip()
         command, *args = message_content.split(' ')
         command = command.lower()
