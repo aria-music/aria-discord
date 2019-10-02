@@ -226,6 +226,8 @@ class Music(discord.Client):
                     self.loop.create_task(self.show_playlists(res))
                 elif response_type == 'playlist':
                     self.loop.create_task(self.show_likelen(res))
+                elif response_type == 'token':
+                    self.loop.create_task(self.show_token(res))
                 elif response_type == 'event_player_state_change':
                     self.loop.create_task(self.set_player_status(res))
                 elif response_type == 'event_queue_change':
@@ -487,6 +489,13 @@ class Music(discord.Client):
         lenlist = len(res.get('data').get('entries'))
 
         await self.safe_send(dest, f'Likes has **{lenlist}** tracks :musical_note: \nmore info use web client')
+
+    async def show_token(self, res):
+        dest = self.get_channel(self.config.text_channel_id)
+        token = res.get('data').get('token')
+        msg_id = await self.safe_send(dest, f'Your TOKEN : **{token}**')
+        await asyncio.sleep(60)
+        await self.safe_delete(msg_id)
 
     async def gen_command_list(self):
         self.commandlist = []
@@ -899,6 +908,14 @@ class Music(discord.Client):
         '''
         await self.safe_send(dest, 'Open web player\n:point_right: https://gaiji.pro/#/play')
 
+    async def cmd_token(self, message, dest, *cmd_args):
+        '''
+        get token
+
+        usage {prefix}token
+        '''
+        await self.post('token')
+
     async def cmd_help(self, message, dest, *cmd_args):
         '''
         show commandlist
@@ -931,7 +948,7 @@ class Music(discord.Client):
         '''
         何でも屋
         '''
-        await self.post('play', {'playlist': 'みんな大好きゆゆうた'})
+        await self.post('play', {'playlist': 'Pastel*Palettes'})
 
     ##########################
 
