@@ -329,7 +329,9 @@ class Music(discord.Client):
 
             for i in range(len(show)):
                 await msg.add_reaction(self.unicode_nums[i])
-            for i in ['fast_forward', 'no_entry_sign', 'white_check_mark', 'play_all']:
+            if page+1 != total_page:
+                await msg.add_reaction(self.control['fast_forward'])
+            for i in ['no_entry_sign', 'white_check_mark', 'play_all']:
                 await msg.add_reaction(self.control[i])
 
             def check(reaction, user):
