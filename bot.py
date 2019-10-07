@@ -353,12 +353,12 @@ class Music(discord.Client):
                     elif str(reaction.emoji) == self.control['play_all']: #play all
                         await self.safe_delete(msg)
                         to_play.clear()
-                        to_play = [i[4] for i in results]
+                        to_play = [i[5] for i in results]
                         break
 
                     select = self.inv_unicode_nums.get(str(reaction.emoji))
                     if select:
-                        to_play.append(show[select-1][4])
+                        to_play.append(show[select-1][5])
                 except asyncio.TimeoutError:
                     await self.safe_delete(msg)
                     return
@@ -522,7 +522,7 @@ class Music(discord.Client):
             if song[0] == 'gpm':
                 numberd_list += (f'{num} **{song[1]}**\n'
                                 f'        {song[2]} / {song[3]}\n'
-                                f"        from: {song[4]}'s gpm\n")
+                                f"        from: gpm - {song[4]}\n")
             else:
                 numberd_list += (f'{num} **{song[1]}**\n'
                                 f'        - from: {song[0]}\n')
