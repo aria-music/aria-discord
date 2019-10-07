@@ -257,6 +257,7 @@ class Music(discord.Client):
                 self.player_status['title'] = entry.get('entry').get('title')
                 self.player_status['album'] = entry.get('entry').get('album')
                 self.player_status['artist'] = entry.get('entry').get('artist')
+                self.player_status['user'] = entry.get('entry').get('user')
             else:
                 self.player_status['album'] = None
                 self.player_status['artist'] = None
@@ -266,6 +267,7 @@ class Music(discord.Client):
             self.player_status['title'] = None
             self.player_status['album'] = None
             self.player_status['artist'] = None
+            self.player_status['user'] = None
             self.player_status['uri'] = None
             self.player_status['is_liked'] = False
             self.player_status['duration'] = None
@@ -394,6 +396,7 @@ class Music(discord.Client):
                 res_text += (f'        album: **{self.player_status.get("album")}**\n'
                             f'        artist: **{self.player_status.get("artist")}**\n'
                             '        from: **gpm**\n'
+                            f'        owner: **{self.player_status.get("user")}**\n'
                             f'        uri: {self.player_status.get("uri")}\n')
             else:
                 res_text += (f'        from: **{self.player_status.get("source")}**\n'
@@ -430,7 +433,7 @@ class Music(discord.Client):
             title = entry.get('title')
             uri = entry.get('uri')
             if source == 'gpm':
-                gpm_info = [entry.get('entry').get(i) for i in ['title', 'album', 'artist']]
+                gpm_info = [entry.get('entry').get(i) for i in ['title', 'album', 'artist', 'user']]
                 gpm_info.insert(0, source)
                 gpm_info.append(uri)
                 resp.append(tuple(gpm_info))
@@ -460,7 +463,7 @@ class Music(discord.Client):
             title = entry.get('title')
             uri = entry.get('uri')
             if source == 'gpm':
-                gpm_info = [entry.get('entry').get(i) for i in ['title', 'album', 'artist']]
+                gpm_info = [entry.get('entry').get(i) for i in ['title', 'album', 'artist', 'user']]
                 gpm_info.insert(0, source)
                 gpm_info.append(uri)
                 resp.append(tuple(gpm_info))
@@ -518,7 +521,8 @@ class Music(discord.Client):
         for num, song in zip(self.nums, orig_list):
             if song[0] == 'gpm':
                 numberd_list += (f'{num} **{song[1]}**\n'
-                                f'        {song[2]} / {song[3]} - from: gpm\n')
+                                f'        {song[2]} / {song[3]}\n'
+                                f"        from: {song[4]}'s gpm\n")
             else:
                 numberd_list += (f'{num} **{song[1]}**\n'
                                 f'        - from: {song[0]}\n')
