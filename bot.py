@@ -904,9 +904,12 @@ class Music(discord.Client):
         '''
         gpmのライブラリをアップデートするコマンド
 
-        usage {prefix}updatedb
+        usage {prefix}updatedb user_name
         '''
-        await self.post('update_db')
+        if not cmd_args:
+            await self.safe_send(dest, 'error:anger:\nusage: `{prefix}updatedb user`'.format(prefix=self.config.cmd_prefix))
+            return
+        await self.post('update_db', {'user': cmd_args[0]})
 
     async def cmd_web(self, message, dest, *cmd_args):
         '''
