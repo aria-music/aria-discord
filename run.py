@@ -19,7 +19,7 @@ async def main(loop):
     ctrl_queue = asyncio.Queue()
     key: dict = {}
 
-    config = Config('config/config.json', 'config/alias.json', 'config/blacklist.json')
+    config = Config('config/config.json', 'config/alias.json', 'config/blacklist.json', 'config/ops.json')
     session = aiohttp.ClientSession()
 
     discord = threading.Thread(target=discord_loader, args=(config, player_queue, res_queue, ctrl_queue, loop),name='discord',  daemon=True)

@@ -4,6 +4,7 @@ import logging
 import re
 import textwrap
 import threading
+from sys import argv
 
 import discord
 
@@ -531,6 +532,14 @@ class Music(discord.Client):
 
         return numberd_list
 
+    def op_only(func):
+            async def wrapper(self, *args, **kwargs):
+                #print(args[0].author.id)
+                if args[0].author.id in self.config.op:
+                    return await func(self, *args, **kwargs)
+                else:
+                    return await self.safe_send(args[0].channel ,':regional_indicator_f: :regional_indicator_u: :regional_indicator_c: :regional_indicator_k: :regional_indicator_y: :regional_indicator_o: :regional_indicator_u:', args[0].author.mention)
+            return wrapper
     ##########################
     async def cmd_play(self, message, dest, *cmd_args):
         '''
@@ -823,6 +832,7 @@ class Music(discord.Client):
         except ValueError:
             await self.cmd_search(message, dest, *cmd_args)
 
+    @op_only
     async def cmd_join(self, message, dest, *cmd_args):
         '''
         [operator only]join VC
@@ -834,6 +844,7 @@ class Music(discord.Client):
             return
         await self.join_vc()
 
+    @op_only
     async def cmd_kick(self, message, dest, *cmd_args):
         '''
         [operator only]kick bot from VC
@@ -845,6 +856,7 @@ class Music(discord.Client):
             return
         await self.exit_vc()
 
+    @op_only
     async def cmd_logout(self, message, dest, *cmd_args):
         '''
         [operator only]
@@ -869,6 +881,7 @@ class Music(discord.Client):
             res_text = 'command alias does not exist\nedit `config/alias.json`'
         await self.safe_send(dest, res_text)
 
+    @op_only
     async def cmd_reload_alias(self, message, dest, *cmd_args):
         '''
         reload config/alias.json
@@ -900,6 +913,7 @@ class Music(discord.Client):
         '''
         await self.post('play', {'uri': 'https://youtu.be/ZHbzi_stmiI'})
 
+    @op_only
     async def cmd_updatedb(self, message, dest, *cmd_args):
         '''
         gpmのライブラリをアップデートするコマンド
@@ -917,6 +931,7 @@ class Music(discord.Client):
         '''
         await self.safe_send(dest, 'Open web player\n:point_right: https://gaiji.pro/#/play')
 
+    @op_only
     async def cmd_token(self, message, dest, *cmd_args):
         '''
         get token
@@ -953,6 +968,7 @@ class Music(discord.Client):
         print_text += '```'
         await self.safe_send(dest, print_text)
 
+    @op_only
     async def cmd_test(self, message, dest, *cmd_args):
         '''
         何でも屋

@@ -3,7 +3,7 @@ import logging
 
 
 class Config:
-    def __init__(self, config_file, alias_file, blacklist):
+    def __init__(self, config_file, alias_file, blacklist, op):
         self.config_file = config_file
         try:
             with open(config_file, 'r') as f:
@@ -21,15 +21,19 @@ class Config:
             logging.error('alias file does not exist')
             self.alias = {}
 
-        black = None
         try:
             with open(blacklist, 'r') as f:
-                black = json.load(f)
+                self.blacklist = json.load(f).get('user_id')
         except FileNotFoundError:
             logging.error('blacklist file does not exist')
-            black = {}
+            self.blacklist = []
 
-        self.parse_blacklist(black)
+        try:
+            with open(op, 'r') as f:
+                self.op = json.load(f).get('user_id')
+        except FileNotFoundError:
+            logging.error('ops file does not exist')
+            self.op = []
 
     def parse_general_config(self, conf):
         self.token = conf.get('token')
@@ -51,10 +55,3 @@ class Config:
             self.serch_result_count = 5
         if not 1 <= self.serch_result_count <=9 or None:
             self.serch_result_count = 5
-
-    def parse_blacklist(self, blacklist):
-        if blacklist is None:
-            self.blacklist = {}
-            return
-        users = [int(i) for i in blacklist.get('user_id')]
-        self.blacklist = users

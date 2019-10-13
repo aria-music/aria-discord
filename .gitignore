@@ -1,6 +1,8 @@
 config/config.json
 config/alias.json
 config/blacklist.json
+config/ops.json
 .python-version
 __pycache__
 *.pyc
+aria_launcher.json
