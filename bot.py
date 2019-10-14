@@ -155,12 +155,12 @@ class Music(discord.Client):
                 await self.cmd_reconnect()
             self.vc_members = len(self.voice.channel.members)
 
-    async def post(self, op, data=None):
+    async def post(self, op, data=None, postback=None):
         '''
         post op and message
         '''
         async with lock:
-            self.ctrl_queue.put_nowait((op, data))
+            self.ctrl_queue.put_nowait((op, data, postback))
 
     async def set_game_activity(self):
         '''
@@ -296,7 +296,7 @@ class Music(discord.Client):
         ----------
         raw_result: dict
         '''
-        dest = self.get_channel(self.config.text_channel_id)
+        dest = self.get_channel(raw_result.get('postback') or self.config.text_channel_id)
         results = await self.parse_result(raw_result)
         if not results:
             res_text = f'Sorry\ncould not find any track'
@@ -387,7 +387,7 @@ class Music(discord.Client):
     """
 
     async def show_np(self, res):
-        dest = self.get_channel(self.config.text_channel_id)
+        dest = self.get_channel(res.get('postback') or self.config.text_channel_id)
         try:
             await asyncio.wait_for(self.set_player_status(res), timeout=1.0)
             res_text = ''
@@ -476,7 +476,7 @@ class Music(discord.Client):
 
     async def show_playlists(self, res):
         _playlists = {}
-        dest = self.get_channel(self.config.text_channel_id)
+        dest = self.get_channel(res.get('postback') or self.config.text_channel_id)
 
         for entry in res.get('data').get('playlists'):
             _playlists[entry.get('name')] = entry.get('length')
@@ -490,14 +490,14 @@ class Music(discord.Client):
         await self.safe_send(dest, res_text)
 
     async def show_likelen(self, res):
-        dest = self.get_channel(self.config.text_channel_id)
+        dest = self.get_channel(res.get('postback') or self.config.text_channel_id)
 
         lenlist = len(res.get('data').get('entries'))
 
         await self.safe_send(dest, f'Likes has **{lenlist}** tracks :musical_note: \nmore info use web client')
 
     async def show_token(self, res):
-        dest = self.get_channel(self.config.text_channel_id)
+        dest = self.get_channel(res.get('postback') or self.config.text_channel_id)
         token = res.get('data').get('token')
         msg_id = await self.safe_send(dest, f'Your TOKEN : **{token}**')
         await asyncio.sleep(60)
@@ -552,11 +552,11 @@ class Music(discord.Client):
             return
         if len(cmd_args) == 1:
             if cmd_args[0][0] == '<':
-                await self.post('queue', {'uri':cmd_args[0][1:-1]})
+                await self.post('queue', {'uri':cmd_args[0][1:-1]}, dest.id)
             else:
-                await self.post('queue', {'uri':cmd_args[0]})
+                await self.post('queue', {'uri':cmd_args[0]}, dest.id)
         else:
-            await self.post('queue', {'uri':[i if i[0] != '<' else i[1:-1] for i in cmd_args]})
+            await self.post('queue', {'uri':[i if i[0] != '<' else i[1:-1] for i in cmd_args]}, dest.id)
 
     async def cmd_repeat(self, message, dest, *cmd_args):
         '''
@@ -565,13 +565,13 @@ class Music(discord.Client):
         usage {prefix}repeat <num>
         '''
         if not cmd_args:
-            await self.post('repeat', {'uri': self.player_status.get('uri')})
+            await self.post('repeat', {'uri': self.player_status.get('uri')}, dest.id)
             return
         try:
             count = int(cmd_args[0])
-            await self.post('repeat', {'uri': self.player_status.get('uri'), 'count': count})
+            await self.post('repeat', {'uri': self.player_status.get('uri'), 'count': count}, dest.id)
         except ValueError:
-            await self.post('repeat', {'uri': self.player_status.get('uri')})
+            await self.post('repeat', {'uri': self.player_status.get('uri')}, dest.id)
 
     async def cmd_pause(self, message, dest, *cmd_args):
         '''
@@ -584,7 +584,7 @@ class Music(discord.Client):
             await dest.send('error:anger:\nplayer is already paused')
             return
         else:
-            await self.post('pause')
+            await self.post('pause', postback=dest.id)
 
     async def cmd_resume(self, message, dest, *cmd_args):
         '''
@@ -597,7 +597,7 @@ class Music(discord.Client):
             await dest.send('error:anger:\nplayer is already playing')
             return
         else:
-            await self.post('resume')
+            await self.post('resume', postback=dest.id)
 
     async def cmd_skip(self, message, dest, *cmd_args):
         '''
@@ -606,7 +606,7 @@ class Music(discord.Client):
         usage {prefix}skip
         '''
         if not cmd_args:
-            await self.post('skip')
+            await self.post('skip', postback=dest.id)
             return
         await self.cmd_skip_to(message, dest, *cmd_args)
 
@@ -624,7 +624,7 @@ class Music(discord.Client):
         try:
             index = int(cmd_args[0]) - 1
             if index <= len(self.play_queue.get('data').get('queue')):
-                await self.post('skip_to', {'index': index, 'uri': self.play_queue.get('data').get('queue')[index].get('uri')})
+                await self.post('skip_to', {'index': index, 'uri': self.play_queue.get('data').get('queue')[index].get('uri')}, dest.id)
             else:
                 await self.safe_send(dest, f'{index+1} is out of queue range')
         except ValueError:
@@ -656,7 +656,7 @@ class Music(discord.Client):
         if len(cmd_args) != 1:
             await dest.send('error:anger:\n usage `{prefix}playnext URL`'.format(prefix=self.config.cmd_prefix))
             return
-        await self.post('queue', {'uri': cmd_args[0], 'head': True})
+        await self.post('queue', {'uri': cmd_args[0], 'head': True}, dest.id)
 
     async def cmd_add(self, message, dest, *cmd_args):
         '''
@@ -669,15 +669,15 @@ class Music(discord.Client):
             return
         if len(cmd_args) == 1:
             if cmd_args[0][0] == '<':
-                await self.post('add_to_playlist', {'name': 'Likes', 'uri':cmd_args[0][1:-1]})
+                await self.post('add_to_playlist', {'name': 'Likes', 'uri':cmd_args[0][1:-1]}, dest.id)
             else:
-                await self.post('add_to_playlist', {'name': 'Likes', 'uri':cmd_args[0]})
+                await self.post('add_to_playlist', {'name': 'Likes', 'uri':cmd_args[0]}, dest.id)
         else:
             for i in cmd_args:
                 if i[0] == '<':
-                    await self.post('add_to_playlist', {'name': 'Likes', 'uri':i[1:-1]})
+                    await self.post('add_to_playlist', {'name': 'Likes', 'uri':i[1:-1]}, dest.id)
                 else:
-                    await self.post('add_to_playlist', {'name': 'Likes', 'uri':i})
+                    await self.post('add_to_playlist', {'name': 'Likes', 'uri':i}, dest.id)
 
     async def cmd_remove(self, message, dest, *cmd_args):
         '''
@@ -691,7 +691,7 @@ class Music(discord.Client):
         try:
             index = int(cmd_args[0]) - 1
             if index <= len(self.play_queue):
-                await self.post('remove', {'index': index, 'uri': self.play_queue.get('data').get('queue')[index].get('uri')})
+                await self.post('remove', {'index': index, 'uri': self.play_queue.get('data').get('queue')[index].get('uri')}, dest.id)
             else:
                 await self.safe_send(dest, f'{index} is out of queue range')
         except ValueError:
@@ -703,7 +703,7 @@ class Music(discord.Client):
 
         usage {prefix}np
         '''
-        await self.post('state')
+        await self.post('state', postback=dest.id)
 
     async def cmd_like(self, message, dest, *cmd_args):
         '''
@@ -712,7 +712,7 @@ class Music(discord.Client):
         usage {prefix}like
         '''
         if not self.player_status.get('is_liked'):
-            await self.post('like', {'uri': self.player_status.get('uri')})
+            await self.post('like', {'uri': self.player_status.get('uri')}, dest.id)
 
     async def cmd_likes(self, message, dest, *cmd_args):
         '''
@@ -720,7 +720,7 @@ class Music(discord.Client):
 
         usage {prefix}likes
         '''
-        await self.post('playlist', {'name': 'Likes'})
+        await self.post('playlist', {'name': 'Likes'}, dest.id)
 
     async def cmd_playlists(self, message, dest, *cmd_args):
         '''
@@ -728,7 +728,7 @@ class Music(discord.Client):
 
         usage {prefix}playlists
         '''
-        await self.post('playlists')
+        await self.post('playlists', postback=dest.id)
 
     async def cmd_mklist(self, message, dest, *cmd_args):
         '''
@@ -739,7 +739,7 @@ class Music(discord.Client):
         if not cmd_args:
             await self.safe_send(dest, 'error:anger:\nusage: `{prefix}play URL`'.format(prefix=self.config.cmd_prefix))
             return
-        await self.post('create_playlist', {'name': cmd_args[0]})
+        await self.post('create_playlist', {'name': cmd_args[0]}, dest.id)
 
     async def cmd_clear(self, message, dest, *cmd_args):
         '''
@@ -747,7 +747,7 @@ class Music(discord.Client):
 
         usage {prefix}clear
         '''
-        await self.post('clear_queue')
+        await self.post('clear_queue', postback=dest.id)
 
     async def cmd_shuffle(self, message, dest, *cmd_args):
         '''
@@ -755,7 +755,7 @@ class Music(discord.Client):
 
         usage {prefix}shuffle
         '''
-        await self.post('shuffle')
+        await self.post('shuffle', postback=dest.id)
 
     async def cmd_purge(self, message, dest, *cmd_args):
         '''
@@ -765,12 +765,12 @@ class Music(discord.Client):
         '''
         if not cmd_args:
             if self.player_status.get('is_liked'):
-                await self.post('remove_from_playlist', {'name':'Likes', 'uri': self.player_status.get('uri')})
+                await self.post('remove_from_playlist', {'name':'Likes', 'uri': self.player_status.get('uri')}, dest.id)
             else:
                 await self.safe_send(dest, 'error:anger:\nThis track is not in Likes')
             return
         for url in cmd_args:
-            await self.post('remove_from_playlist', {'name':'Likes', 'uri': url})
+            await self.post('remove_from_playlist', {'name':'Likes', 'uri': url}, dest.id)
 
     async def cmd_save(self, message, dest, *cmd_args):
         '''
@@ -779,10 +779,10 @@ class Music(discord.Client):
         usage {prefix}save
         '''
         if not cmd_args:
-            await self.post('add_to_playlist', {'name': 'Likes', 'uri': self.player_status.get('uri')})
+            await self.post('add_to_playlist', {'name': 'Likes', 'uri': self.player_status.get('uri')}, dest.id)
         else:
             for pl in cmd_args:
-                await self.post('add_to_playlist', {'name': pl, 'uri': self.player_status.get('uri')})
+                await self.post('add_to_playlist', {'name': pl, 'uri': self.player_status.get('uri')}, dest.id)
 
     async def cmd_search(self, message, dest, *cmd_args):
         '''
@@ -818,13 +818,13 @@ class Music(discord.Client):
 
         query = ' '.join(cmd_args)
         if provider:
-            await self.post('search', {'query': query, 'provider': provider})
+            await self.post('search', {'query': query, 'provider': provider}, dest.id)
         else:
-            await self.post('search', {'query': query})
+            await self.post('search', {'query': query}, dest.id)
 
     async def cmd_s(self, message, dest, *cmd_args):
         if not cmd_args:
-            await self.post('skip')
+            await self.post('skip', postback=dest.id)
             return
         try:
             int(cmd_args[0])
@@ -911,7 +911,7 @@ class Music(discord.Client):
         '''
         U           C
         '''
-        await self.post('play', {'uri': 'https://youtu.be/ZHbzi_stmiI'})
+        await self.post('play', {'uri': 'https://youtu.be/ZHbzi_stmiI'}, dest.id)
 
     @op_only
     async def cmd_updatedb(self, message, dest, *cmd_args):
@@ -923,7 +923,7 @@ class Music(discord.Client):
         if not cmd_args:
             await self.safe_send(dest, 'error:anger:\nusage: `{prefix}updatedb user`'.format(prefix=self.config.cmd_prefix))
             return
-        await self.post('update_db', {'user': cmd_args[0]})
+        await self.post('update_db', {'user': cmd_args[0]}, dest.id)
 
     async def cmd_web(self, message, dest, *cmd_args):
         '''
@@ -938,7 +938,7 @@ class Music(discord.Client):
 
         usage {prefix}token
         '''
-        await self.post('token')
+        await self.post('token', postback=dest.id)
 
     async def cmd_help(self, message, dest, *cmd_args):
         '''
@@ -973,15 +973,15 @@ class Music(discord.Client):
         '''
         何でも屋
         '''
-        await self.post('play', {'playlist': 'Pastel*Palettes'})
+        await self.post('play', {'playlist': 'Pastel*Palettes'}, dest.id)
 
     ##########################
 
     async def on_message(self, message):
         if message.author.bot:
             return
-        if message.channel.id != self.config.text_channel_id:
-            return
+        # if message.channel.id != self.config.text_channel_id:
+        #     return
 
         if not message.content[:len(self.config.cmd_prefix)] == self.config.cmd_prefix:
             return
