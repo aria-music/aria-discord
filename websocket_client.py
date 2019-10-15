@@ -28,7 +28,7 @@ class ws_ctrl():
             if op[0] == 'discord ready':
                 event.set()
             else:
-                await wsclient.send_json(enclose_packet(op[0], self.key, op[1]))
+                await wsclient.send_json(enclose_packet(op[0], self.key, op[1], op[2]))
                 logging.info(f'post: {op}')
         await asyncio.sleep(0.5)
         self.loop.create_task(self.post_op(wsclient))
@@ -37,7 +37,18 @@ class ws_ctrl():
         wsclient = await self.session.ws_connect(self.uri)
         logging.info('res ws connected')
         async for msg in wsclient:
-            res = json.loads(msg.data)
+            try:
+                res = msg.json()
+            except:
+                logging.error(f'Failed to parse: {msg.data}')
+                continue
+
+            # convert postback to int
+            try:
+                res['postback'] = int(res['postback'])
+            except:
+                logging.error('You gaiji: ', exc_info=True)
+            
             #logging.info(res)
             #logging.info(res.get('type'))
             if res.get('type') == 'hello':
@@ -75,9 +86,10 @@ class ws_music():
                     async with lock:
                         self.player_queue.put_nowait(msg.data)
 
-def enclose_packet(op, key, data=None):
+def enclose_packet(op, key, data=None, postback=None):
     return {
         'op': op,
         'key': key,
-        'data': data
+        'data': data,
+        'postback': str(postback)
     }
