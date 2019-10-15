@@ -25,7 +25,7 @@ class Music(discord.Client):
         self.count = 0
         self.voice = None
         self.vc_members = 0
-        self.output: bytearray = []
+        self.output: bytearray = bytearray()
 
         self.player_status = {
             'state': False,
@@ -184,25 +184,9 @@ class Music(discord.Client):
         await self.change_presence(activity=playing_status)
 
     async def _play(self):
-        await lock.acquire()
-        if self.player_queue.empty():
-            lock.release()
-            await asyncio.sleep(0.01)
-        else:
-            data = self.player_queue.get_nowait()
-            lock.release()
-            self.count += 1
-            self.output.append(data)
-
-        if self.count == 10:
-            for s in self.output:
-                if self.voice:
-                    self.voice.send_audio_packet(s, encode=False)
-                else:
-                    pass
-            self.count = 0
-            self.output.clear()
-        await self.loop.create_task(self._play())
+        if self.voice:
+            self.voice.send_audio_packet(await self.player_queue.get(), encode=False)
+        self.loop.create_task(self._play())
 
     def handle_res(self):
         self.loop.create_task(self._handle_res())
