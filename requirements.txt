@@ -9,7 +9,7 @@ async-timeout==3.0.1      # via aiohttp
 attrs==19.1.0             # via aiohttp
 cffi==1.12.3              # via pynacl
 chardet==3.0.4            # via aiohttp
-discord.py==1.2.3         # via discord
+discord.py==1.2.4         # via discord
 discord==1.0.1
 idna==2.8                 # via yarl
 multidict==4.5.2          # via aiohttp, yarl

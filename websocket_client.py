@@ -48,7 +48,7 @@ class ws_ctrl():
                 res['postback'] = int(res['postback'])
             except:
                 logging.error('You gaiji: ', exc_info=True)
-            
+
             #logging.info(res)
             #logging.info(res.get('type'))
             if res.get('type') == 'hello':

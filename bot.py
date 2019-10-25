@@ -25,7 +25,6 @@ class Music(discord.Client):
         self.count = 0
         self.voice = None
         self.vc_members = 0
-        self.output: bytearray = bytearray()
 
         self.player_status = {
             'state': False,
@@ -90,7 +89,7 @@ class Music(discord.Client):
         logging.info('discord vc connect')
         response_handler = threading.Thread(target=self.handle_res, daemon=True)
         self.vc_members = len(self.voice.channel.members)
-        self.voice.loop.create_task(self._play())
+        self.loop.create_task(self._play())
 
         response_handler.start()
         logging.info('connected to vc')
