@@ -94,7 +94,7 @@ class Music(discord.Client):
         response_handler.start()
         logging.info('connected to vc')
 
-    async def safe_send(self, dest, payload, user=None):
+    async def safe_send(self, dest, payload, users=None):
         '''
         Parameters
         ----------
@@ -107,8 +107,10 @@ class Music(discord.Client):
         msg
         '''
         try:
-            if user:
-                msg = await dest.send(f'{user}\n{payload}')
+            if users:
+                if not isinstance(users, (list, tuple)):
+                    users = [users]
+                msg = await dest.send(f'{" ".join(users)}\n{payload}')
             else:
                 msg = await dest.send(payload)
         except discord.Forbidden:
@@ -878,12 +880,16 @@ class Music(discord.Client):
         '''
         F U C K Y O U
         '''
+        await message.delete()
+        target = message.mentions or [message.author]
         fuck_str = ':regional_indicator_f: :regional_indicator_u: :regional_indicator_c: :regional_indicator_k: :regional_indicator_y: :regional_indicator_o: :regional_indicator_u: '
-        await self.safe_send(dest, fuck_str, message.author.mention)
+        await self.safe_send(dest, fuck_str, target)
 
     async def cmd_potg(self, message, dest, *cmd_args):
+        await message.delete()
+        target = message.mentions or [message.author]
         potg_str = ':right_facing_fist: :left_facing_fist: 推薦されました:チームプレイヤー'
-        await self.safe_send(dest, potg_str, message.author.mention)
+        await self.safe_send(dest, potg_str, target)
 
     async def cmd_uc(self, message, dest, *cmd_args):
         '''
