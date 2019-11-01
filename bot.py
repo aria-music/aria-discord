@@ -110,7 +110,7 @@ class Music(discord.Client):
             if users:
                 if not isinstance(users, (list, tuple)):
                     users = [users]
-                msg = await dest.send(f'{" ".join(users)}\n{payload}')
+                msg = await dest.send(f'{" ".join([user.mention for user in users])}\n{payload}')
             else:
                 msg = await dest.send(payload)
         except discord.Forbidden:
