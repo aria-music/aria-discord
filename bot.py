@@ -885,11 +885,13 @@ class Music(discord.Client):
         '''
         F U C K Y O U
         '''
+        await message.delete()
         target = message.mentions or [message.author]
         fuck_str = ':regional_indicator_f: :regional_indicator_u: :regional_indicator_c: :regional_indicator_k: :regional_indicator_y: :regional_indicator_o: :regional_indicator_u: '
         await self.safe_send(dest, fuck_str, target)
 
     async def cmd_potg(self, message, dest, *cmd_args):
+        await message.delete()
         target = message.mentions or [message.author]
         potg_str = ':right_facing_fist: :left_facing_fist: 推薦されました:チームプレイヤー'
         await self.safe_send(dest, potg_str, target)
