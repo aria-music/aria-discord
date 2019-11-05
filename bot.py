@@ -1,13 +1,13 @@
 import asyncio
 import json
 import logging
+import random
 import re
 import textwrap
 import threading
 from sys import argv
 
 import discord
-
 from config import Config
 from opus_loader import load_opus_libs
 
@@ -22,7 +22,6 @@ class Music(discord.Client):
         self.res_queue = res_queue
         self.ctrl_queue = ctrl_queue
         self.loop = loop
-        self.count = 0
         self.voice = None
         self.vc_members = 0
 
@@ -185,8 +184,14 @@ class Music(discord.Client):
         await self.change_presence(activity=playing_status)
 
     async def _play(self):
-        if self.voice:
-            self.voice.send_audio_packet(await self.player_queue.get(), encode=False)
+        await lock.acquire()
+        if self.player_queue.empty():
+            lock.release()
+            await asyncio.sleep(0.001)
+        else:
+            if self.voice:
+                self.voice.send_audio_packet(self.player_queue.get_nowait(), encode=False)
+            lock.release()
         self.loop.create_task(self._play())
 
     def handle_res(self):
@@ -888,8 +893,8 @@ class Music(discord.Client):
     async def cmd_potg(self, message, dest, *cmd_args):
         await message.delete()
         target = message.mentions or [message.author]
-        potg_str = ':right_facing_fist: :left_facing_fist: 推薦されました:チームプレイヤー'
-        await self.safe_send(dest, potg_str, target)
+        potg_strs = [':right_facing_fist: :left_facing_fist: 推薦されました:チームプレイヤー', ':handshake: 推薦されました:スポーツマンシップ', ':point_right:  推薦を獲得:ショットコーラー']
+        await self.safe_send(dest, random.choice(potg_strs), target)
 
     async def cmd_uc(self, message, dest, *cmd_args):
         '''
