@@ -885,13 +885,13 @@ class Music(discord.Client):
         '''
         F U C K Y O U
         '''
-        await message.delete()
+        await self.safe_delete(message)
         target = message.mentions or [message.author]
         fuck_str = ':regional_indicator_f: :regional_indicator_u: :regional_indicator_c: :regional_indicator_k: :regional_indicator_y: :regional_indicator_o: :regional_indicator_u: '
         await self.safe_send(dest, fuck_str, target)
 
     async def cmd_potg(self, message, dest, *cmd_args):
-        await message.delete()
+        await self.safe_delete(message)
         target = message.mentions or [message.author]
         potg_strs = [':right_facing_fist: :left_facing_fist: 推薦されました:チームプレイヤー', ':handshake: 推薦されました:スポーツマンシップ', ':point_right:  推薦を獲得:ショットコーラー']
         await self.safe_send(dest, random.choice(potg_strs), target)
@@ -900,6 +900,7 @@ class Music(discord.Client):
         '''
         U           C
         '''
+        await self.safe_delete(message)
         await self.post('play', {'uri': 'https://youtu.be/ZHbzi_stmiI'}, dest.id)
 
     @op_only
