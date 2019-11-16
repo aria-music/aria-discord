@@ -99,7 +99,7 @@ class Music(discord.Client):
         ----------
         dest: discord.channel.TextChannel
         payload: str
-        user: message.author.mention
+        user: message.author
 
         Returns
         -------
@@ -978,8 +978,8 @@ class Music(discord.Client):
 
         if message.author.id in self.config.blacklist:
             logging.error(f'you are in command blacklist! {message.author}:/')
-            await self.safe_send(message.channel, (f'{message.author.mention}you are in command blacklist! :/\n'
-                                                    'if you want to control, please contact admin of this bot'))
+            await self.safe_send(message.channel, ('you are in command blacklist! :/\n'
+                                                    'if you want to control, please contact admin of this bot'), message.author)
             return
 
         message_content = message.content[len(self.config.cmd_prefix):].strip()
@@ -996,4 +996,7 @@ class Music(discord.Client):
         if handler:
             await handler(message, message.channel, *args)
         else:
-            await self.safe_send(message.channel, 'いやいやいやいや\nそんな⌘ないけどガイジですか??????????', message.author.mention)
+            await self.safe_send(message.channel, 'いやいやいやいや\nそんな⌘ないけどガイジですか??????????', message.author)
+
+        if message.channel != self.config.text_channel_id:
+            await self.safe_delete(message)
