@@ -346,7 +346,7 @@ class Music(discord.Client):
 
                     select = self.inv_unicode_nums.get(str(reaction.emoji))
                     if select:
-                        to_play.append(show[select-1][5])
+                        to_play.append(show[select-1][4])
                 except asyncio.TimeoutError:
                     await self.safe_delete(msg)
                     return
@@ -518,13 +518,13 @@ class Music(discord.Client):
         return numberd_list
 
     def op_only(func):
-            async def wrapper(self, *args, **kwargs):
-                #print(args[0].author.id)
-                if args[0].author.id in self.config.op:
-                    return await func(self, *args, **kwargs)
-                else:
-                    return await self.safe_send(args[0].channel ,':regional_indicator_f: :regional_indicator_u: :regional_indicator_c: :regional_indicator_k: :regional_indicator_y: :regional_indicator_o: :regional_indicator_u:', args[0].author.mention)
-            return wrapper
+        async def wrapper(self, *args, **kwargs):
+            #print(args[0].author.id)
+            if args[0].author.id in self.config.op:
+                return await func(self, *args, **kwargs)
+            else:
+                return await self.safe_send(args[0].channel ,':regional_indicator_f: :regional_indicator_u: :regional_indicator_c: :regional_indicator_k: :regional_indicator_y: :regional_indicator_o: :regional_indicator_u:', args[0].author.mention)
+        return wrapper
     ##########################
     async def cmd_play(self, message, dest, *cmd_args):
         '''
@@ -998,5 +998,5 @@ class Music(discord.Client):
         else:
             await self.safe_send(message.channel, 'いやいやいやいや\nそんな⌘ないけどガイジですか??????????', message.author)
 
-        if message.channel != self.config.text_channel_id:
+        if message.channel.id != self.config.text_channel_id:
             await self.safe_delete(message)
