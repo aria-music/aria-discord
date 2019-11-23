@@ -307,7 +307,7 @@ class Music(discord.Client):
         for page in range(total_page):
             res_text = f'page: {page+1} / {total_page}\n'
             show = result[0:len(result) if len(result) < res_count else res_count]
-            result = result[len(result) if len(result) < res_count else res_count:]
+            result = result[len(show):]
             res_text += await self.format_list(show, 'search')
             #r = re.compile(key, re.IGNORECASE)
             #res_text = re.sub(r, f'**{key}**', res_text)
@@ -341,12 +341,12 @@ class Music(discord.Client):
                     elif str(reaction.emoji) == self.control['play_all']: #play all
                         await self.safe_delete(msg)
                         to_play.clear()
-                        to_play = [i[5] for i in results]
+                        to_play = [i.get('uri') for i in results]
                         break
 
                     select = self.inv_unicode_nums.get(str(reaction.emoji))
                     if select:
-                        to_play.append(show[select-1][4])
+                        to_play.append(show[select-1].get('uri'))
                 except asyncio.TimeoutError:
                     await self.safe_delete(msg)
                     return
@@ -357,19 +357,6 @@ class Music(discord.Client):
                 break
 
         await _send()
-    """
-    async def queue(self, raw_result):
-        dest = self.get_channel(self.config.text_channel_id)
-        result = await self.parse_queue(raw_result)
-        if not result:
-            res_text = f'No tracks in queue'
-            await self.safe_send(dest, res_text)
-            return
-        res_text = (f'**play queue**\n'
-                    f'**{len(result)}** tracks in queue')
-        res_text = await self.format_list(result, 'queue')
-        await self.safe_send(dest, res_text)
-    """
 
     async def show_np(self, res):
         dest = self.get_channel(res.get('postback') or self.config.text_channel_id)
@@ -409,25 +396,26 @@ class Music(discord.Client):
 
         Returns
         -------
-        resp: list
+        songs: list
         '''
-        if res.get('data') == None:
+        if not res.get('data'):
             #0hit
             return None
 
-        resp = []
+        songs = []
         for entry in res.get('data'):
-            source = entry.get('source')
-            title = entry.get('title')
-            uri = entry.get('uri')
-            if source == 'gpm':
-                gpm_info = [entry.get('entry').get(i) for i in ['title', 'album', 'artist', 'user']]
-                gpm_info.insert(0, source)
-                gpm_info.append(uri)
-                resp.append(tuple(gpm_info))
-            else:
-                resp.append((source, title, None, None, uri))
-        return resp
+            song = {}
+            song['source'] = entry.get('source')
+            song['title'] = entry.get('title')
+            if entry.get('entry'):
+                song['title'] = entry.get('entry').get('title')
+                song['artist'] = entry.get('entry').get('artist')
+                song['album'] = entry.get('entry').get('album')
+                song['user'] = entry.get('entry').get('user')
+            song['uri'] = entry.get('uri')
+            song['thumbnail'] = entry.get('thumbnail_small')
+            songs.append(song)
+        return songs
 
     async def parse_queue(self, res):
         '''
@@ -439,25 +427,26 @@ class Music(discord.Client):
 
         Returns
         -------
-        que: list
+        songs: list
         '''
-        if res.get('data').get('queue') == None:
-            #no item in queue
+        if not res.get('data'):
+            #0hit
             return None
 
-        resp = []
-        for entry in res.get('data').get('queue'):
-            source = entry.get('source')
-            title = entry.get('title')
-            uri = entry.get('uri')
-            if source == 'gpm':
-                gpm_info = [entry.get('entry').get(i) for i in ['title', 'album', 'artist', 'user']]
-                gpm_info.insert(0, source)
-                gpm_info.append(uri)
-                resp.append(tuple(gpm_info))
-            else:
-                resp.append((source, title, None, None, uri))
-        return resp
+        songs = []
+        for entry in res.get('data').get("queue"):
+            song = {}
+            song['source'] = entry.get('source')
+            song['title'] = entry.get('title')
+            if entry.get('entry'):
+                song['title'] = entry.get('entry').get('title')
+                song['artist'] = entry.get('entry').get('artist')
+                song['album'] = entry.get('entry').get('album')
+                song['user'] = entry.get('entry').get('user')
+            song['uri'] = entry.get('uri')
+            song['thumbnail'] = entry.get('thumbnail_small')
+            songs.append(song)
+        return songs
 
     async def show_playlists(self, res):
         _playlists = {}
@@ -504,16 +493,16 @@ class Music(discord.Client):
             if self.player_status.get('source') == 'gpm':
                 numberd_list += f'        {self.player_status.get("album")} / {self.player_status.get("artist")}\n\n'
             else:
-                numberd_list += '\n\n'
+                numberd_list += '\n'
             numberd_list += f'**{len(orig_list)}** tracks in queue\n\n'
         for num, song in zip(self.nums, orig_list):
-            if song[0] == 'gpm':
-                numberd_list += (f'{num} **{song[1]}**\n'
-                                f'        {song[2]} / {song[3]}\n'
-                                f"        from: gpm - {song[4]}\n")
+            if song['source'] == 'gpm':
+                numberd_list += (f'{num} **{song["title"]}**\n'
+                                f'        {song["album"]} / {song["artist"]}\n'
+                                f'        from: gpm - {song["user"]}\n')
             else:
-                numberd_list += (f'{num} **{song[1]}**\n'
-                                f'        - from: {song[0]}\n')
+                numberd_list += (f'{num} **{song["title"]}**\n'
+                                f'        - from: {song["source"]}\n')
 
         return numberd_list
 
@@ -626,8 +615,6 @@ class Music(discord.Client):
             res_text = f'No tracks in queue'
             await self.safe_send(dest, res_text)
             return
-        res_text = (f'**play queue**\n'
-                    f'**{len(result)}** tracks in queue')
         res_text = await self.format_list(result, 'queue')
         await self.safe_send(dest, res_text)
 
