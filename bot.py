@@ -314,11 +314,11 @@ class Music(discord.Client):
             msg = await self.safe_send(dest, res_text)
 
             for i in range(len(show)):
-                await msg.add_reaction(self.unicode_nums[i])
+                self.loop.create_task(msg.add_reaction(self.unicode_nums[i]))
             if page+1 != total_page:
-                await msg.add_reaction(self.control['fast_forward'])
+                self.loop.create_task(msg.add_reaction(self.control['fast_forward']))
             for i in ['no_entry_sign', 'white_check_mark', 'play_all']:
-                await msg.add_reaction(self.control[i])
+                self.loop.create_task(msg.add_reaction(self.control[i]))
 
             def check(reaction, user):
                 return user != msg.author and reaction.message.id == msg.id
@@ -403,6 +403,7 @@ class Music(discord.Client):
             return None
 
         songs = []
+        # for entry in res.get('data').get('result') or res.get('data').get('queue'):
         for entry in res.get('data'):
             song = {}
             song['source'] = entry.get('source')
@@ -835,6 +836,7 @@ class Music(discord.Client):
 
         usage {prefix}logout
         '''
+        await self.safe_delete(message)
         await self.logout()
         exit(1)
 
@@ -875,7 +877,10 @@ class Music(discord.Client):
         await self.safe_delete(message)
         target = message.mentions or [message.author]
         fuck_str = ':regional_indicator_f: :regional_indicator_u: :regional_indicator_c: :regional_indicator_k: :regional_indicator_y: :regional_indicator_o: :regional_indicator_u: '
-        await self.safe_send(dest, fuck_str, target)
+        fuck_emote = ['\U0001F1EB', '\U0001F1FA', '\U0001F1E8', '\U0001F1F0', '\U0001F595']
+        msg = await self.safe_send(dest, fuck_str, target)
+        for emote in fuck_emote:
+            self.loop.create_task(msg.add_reaction(emote))
 
     async def cmd_potg(self, message, dest, *cmd_args):
         await self.safe_delete(message)
