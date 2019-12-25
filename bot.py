@@ -533,6 +533,19 @@ class Music(discord.Client):
         else:
             await self.post('queue', {'uri':[i if i[0] != '<' else i[1:-1] for i in cmd_args]}, dest.id)
 
+    async def cmd_quelist(self, message, dest, *cmd_args):
+        '''
+        queue playlist
+
+        usage {prefix}quelist PlaylistName
+        '''
+        if not cmd_args:
+            await self.safe_send(dest, 'uhnnn fuckyou\nusage quelist PlaylistName')
+            return
+
+        playlist = ' '.join(cmd_args)
+        await self.post('queue', {'playlist': playlist}, dest.id)
+
     async def cmd_repeat(self, message, dest, *cmd_args):
         '''
         repeat now-playing song
