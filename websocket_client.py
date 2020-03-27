@@ -9,14 +9,14 @@ lock = asyncio.Lock()
 event = threading.Event()
 
 class ws_ctrl():
-    def __init__(self, ctrl_queue, res_queue, session, uri, key, loop):
+    def __init__(self, ctrl_queue, res_queue, session, uri, key, token, loop):
         self.ctrl_queue = ctrl_queue
         self.res_queue = res_queue
         self.session = session
         self.uri = uri
         self.global_key = key
-        self.key = None
         self.loop = loop
+        self.headers = {'Authorization': f'Bearer {token}'}
 
     async def post_op(self, wsclient):
         op = ''
@@ -28,13 +28,13 @@ class ws_ctrl():
             if op[0] == 'discord ready':
                 event.set()
             else:
-                await wsclient.send_json(enclose_packet(op[0], self.key, op[1], op[2]))
+                await wsclient.send_json(enclose_packet(op[0], op[1], op[2]))
                 logging.info(f'post: {op}')
         await asyncio.sleep(0.5)
         self.loop.create_task(self.post_op(wsclient))
 
     async def receive_res(self):
-        wsclient = await self.session.ws_connect(self.uri)
+        wsclient = await self.session.ws_connect(self.uri, headers=self.headers)
         logging.info('res ws connected')
         async for msg in wsclient:
             try:
@@ -47,32 +47,33 @@ class ws_ctrl():
             try:
                 res['postback'] = int(res['postback'])
             except:
-                logging.error('You gaiji: ', exc_info=True)
+                # logging.error('You gaiji: ', exc_info=True)
+                pass
 
             #logging.info(res)
             #logging.info(res.get('type'))
             if res.get('type') == 'hello':
                 async with lock:
                     self.global_key['key'] = res.get('key')
-                self.key = res.get('key')
-                logging.info(f'ws key: {self.key}')
+                    logging.info(f'ws key: {self.global_key}')
                 self.loop.create_task(self.post_op(wsclient))
             else:
                 async with lock:
                     self.res_queue.put_nowait(res)
 
 class ws_music():
-    def __init__(self, player_queue, session, uri, key):
+    def __init__(self, player_queue, session, uri, key, token):
         self.player_queue = player_queue
         self.session = session
         self.uri = uri
         self.key = key
+        self.headers = {'Authorization': f'Bearer {token}'}
 
     async def receive_music_bin(self):
         while not event.wait(timeout=0.5):
             await asyncio.sleep(1)
 
-        async with self.session.ws_connect(self.uri) as wsclient:
+        async with self.session.ws_connect(self.uri, headers=self.headers) as wsclient:
             async with lock:
                 key = self.key.get('key')
 
@@ -86,10 +87,9 @@ class ws_music():
                     async with lock:
                         self.player_queue.put_nowait(msg.data)
 
-def enclose_packet(op, key, data=None, postback=None):
+def enclose_packet(op, data=None, postback=None):
     return {
         'op': op,
-        'key': key,
         'data': data,
         'postback': str(postback)
     }

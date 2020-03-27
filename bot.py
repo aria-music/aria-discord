@@ -212,6 +212,8 @@ class Music(discord.Client):
             self.loop.create_task(self.show_likelen(res))
         elif response_type == 'token':
             self.loop.create_task(self.show_token(res))
+        elif response_type == 'invite':
+            self.loop.create_task(self.show_invite(res))
         elif response_type == 'event_player_state_change':
             self.loop.create_task(self.set_player_status(res))
         elif response_type == 'event_queue_change':
@@ -475,6 +477,13 @@ class Music(discord.Client):
         dest = self.get_channel(res.get('postback') or self.config.text_channel_id)
         token = res.get('data').get('token')
         msg_id = await self.safe_send(dest, f'Your TOKEN : **{token}**')
+        await asyncio.sleep(60)
+        await self.safe_delete(msg_id)
+
+    async def show_invite(self, res):
+        dest = self.get_channel(res.get('postback') or self.config.text_channel_id)
+        invite = res.get('data').get('invite')
+        msg_id = await self.safe_send(dest, f'Your invite link : https://aria.gaiji.pro/auth/github/register?invite={invite}')
         await asyncio.sleep(60)
         await self.safe_delete(msg_id)
 
@@ -767,8 +776,8 @@ class Music(discord.Client):
         if not cmd_args:
             await self.post('add_to_playlist', {'name': 'Likes', 'uri': self.player_status.get('uri')}, dest.id)
         else:
-            for pl in cmd_args:
-                await self.post('add_to_playlist', {'name': pl, 'uri': self.player_status.get('uri')}, dest.id)
+            playlist_name = ' '.join(cmd_args)
+            await self.post('add_to_playlist', {'name': playlist_name, 'uri': self.player_status.get('uri')}, dest.id)
 
     async def cmd_search(self, message, dest, *cmd_args):
         '''
@@ -924,7 +933,7 @@ class Music(discord.Client):
         '''
         open web ui
         '''
-        await self.safe_send(dest, 'Open web player\n:point_right: https://gaiji.pro/#/play')
+        await self.safe_send(dest, 'Open web player\n:point_right: https://aria.gaiji.pro/auth/github/login')
 
     @op_only
     async def cmd_token(self, message, dest, *cmd_args):
@@ -934,6 +943,14 @@ class Music(discord.Client):
         usage {prefix}token
         '''
         await self.post('token', postback=dest.id)
+
+    async def cmd_invite(self, message, dest, *cmd_args):
+        '''
+        generate invite code for account registration
+
+        usage {prefix}invite
+        '''
+        await self.post('invite', postback=dest.id)
 
     async def cmd_help(self, message, dest, *cmd_args):
         '''

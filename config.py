@@ -37,6 +37,7 @@ class Config:
 
     def parse_general_config(self, conf):
         self.token = conf.get('token')
+        self.aria_token = conf.get('aria_token')
         self.stream_endpoint = conf.get('stream_endpoint')
         self.cmd_endpoint = conf.get('cmd_endpoint')
         self.voice_channel_id = int(conf.get('voice_channel_id'))

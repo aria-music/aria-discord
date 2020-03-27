@@ -9,7 +9,7 @@ from config import Config
 from websocket_client import ws_ctrl, ws_music
 
 logging.basicConfig(
-                level=logging.DEBUG,
+                level=logging.INFO,
                 format='[%(asctime)s][%(module)s] %(message)s'
             )
 
@@ -22,9 +22,11 @@ async def main(loop):
     config = Config('config/config.json', 'config/alias.json', 'config/blacklist.json', 'config/ops.json')
     session = aiohttp.ClientSession()
 
+    token = config.aria_token
+
     discord = threading.Thread(target=discord_loader, args=(config, player_queue, res_queue, ctrl_queue, loop),name='discord',  daemon=True)
-    ctrl = threading.Thread(target=ctrl_loader, args=(ctrl_queue, res_queue, session, config.cmd_endpoint, key, loop), name='ctrl', daemon=True)
-    music = threading.Thread(target=music_loader, args=(player_queue, session, config.stream_endpoint, key, loop), name='music', daemon=True)
+    ctrl = threading.Thread(target=ctrl_loader, args=(ctrl_queue, res_queue, session, config.cmd_endpoint, key, token, loop), name='ctrl', daemon=True)
+    music = threading.Thread(target=music_loader, args=(player_queue, session, config.stream_endpoint, key, token, loop), name='music', daemon=True)
     discord.start()
     ctrl.start()
     music.start()
@@ -34,14 +36,14 @@ def discord_loader(config, player_queue, res_queue, ctrl_queue, loop):
     music = Music(config, player_queue, res_queue, ctrl_queue, loop)
     loop.create_task(music.start(config.token))
 
-def ctrl_loader(q1, q2, session, uri, key, loop):
+def ctrl_loader(q1, q2, session, uri, key, token, loop):
     asyncio.set_event_loop(loop)
-    ws = ws_ctrl(q1, q2, session, uri, key, loop)
+    ws = ws_ctrl(q1, q2, session, uri, key, token, loop)
     loop.create_task(ws.receive_res())
 
-def music_loader(q, session, uri, key, loop):
+def music_loader(q, session, uri, key, token, loop):
     asyncio.set_event_loop(loop)
-    ws = ws_music(q, session, uri, key)
+    ws = ws_music(q, session, uri, key, token)
     loop.create_task(ws.receive_music_bin())
 
 if __name__ == '__main__':
