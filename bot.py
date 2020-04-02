@@ -405,39 +405,7 @@ class Music(discord.Client):
             return None
 
         songs = []
-        # for entry in res.get('data').get('result') or res.get('data').get('queue'):
-        for entry in res.get('data'):
-            song = {}
-            song['source'] = entry.get('source')
-            song['title'] = entry.get('title')
-            if entry.get('entry'):
-                song['title'] = entry.get('entry').get('title')
-                song['artist'] = entry.get('entry').get('artist')
-                song['album'] = entry.get('entry').get('album')
-                song['user'] = entry.get('entry').get('user')
-            song['uri'] = entry.get('uri')
-            song['thumbnail'] = entry.get('thumbnail_small')
-            songs.append(song)
-        return songs
-
-    async def parse_queue(self, res):
-        '''
-        fetch play que
-
-        Paramters
-        ---------
-        res: dict
-
-        Returns
-        -------
-        songs: list
-        '''
-        if not res.get('data'):
-            #0hit
-            return None
-
-        songs = []
-        for entry in res.get('data').get("queue"):
+        for entry in res.get('data').get('result') or res.get('data').get('queue'):
             song = {}
             song['source'] = entry.get('source')
             song['title'] = entry.get('title')
@@ -633,7 +601,7 @@ class Music(discord.Client):
 
         usage {prefix}queue
         '''
-        result = await self.parse_queue(self.play_queue)
+        result = await self.parse_result(self.play_queue)
         if not result:
             res_text = f'No tracks in queue'
             await self.safe_send(dest, res_text)
