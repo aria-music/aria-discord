@@ -980,6 +980,20 @@ class Music(discord.Client):
         print_text += '```'
         await self.safe_send(dest, print_text)
 
+    async def cmd_save_que(self, mesasge, dest, *cmd_args):
+        '''
+        save que as playlist
+
+        usage {prefix}save_que playlist name
+        '''
+        playlist = ' '.join(cmd_args) or 'Likes'
+        # TODO: check playlist valid
+
+        _que =  await self.parse_queue(self.play_queue)
+        for song in _que:
+            _uri = song['uri']
+            await self.post('add_to_playlist', {'name': playlist, 'uri': _uri}, dest.id)
+
     @op_only
     async def cmd_test(self, message, dest, *cmd_args):
         '''
